@@ -18,6 +18,21 @@ let gameOver = false;
 let paused = false;
 let dropInterval = 500;
 let lastDrop = 0;
+let holdType = null;
+let holdUsed = false;
+
+let leftHeld = false;
+let rightHeld = false;
+let downHeld = false;
+let lastHorizontalDir = 0;
+let nextHorizontalMove = 0;
+let nextSoftDrop = 0;
+let lockStartedAt = 0;
+
+const HORIZONTAL_REPEAT_DELAY = 140;
+const HORIZONTAL_REPEAT_INTERVAL = 55;
+const SOFT_DROP_INTERVAL = 45;
+const LOCK_DELAY = 450;
 //switched to millis which counts milliseconds instead of frameCount so we can track in time instead of converting and manipulating draw speeds
 function setup() {
     createCanvas(windowWidth, windowHeight);
@@ -44,7 +59,10 @@ function draw() {
     drawGhost();
     drawActivePiece();
     drawSidebar();
-    if (!gameOver && !paused) fall();
+    if (!gameOver && !paused) {
+        handleHeldInput();
+        fall();
+    }
     if (gameOver) drawGameOver();
     if (paused)   drawPaused();
 }
@@ -56,6 +74,10 @@ function randomPiece() {
 function spawnPiece() {
     const type = nextType;
     nextType = randomPiece();
+    return spawnPieceOfType(type);
+}
+
+function spawnPieceOfType(type) {
     const startX = originX + Math.floor((COLS - 4) / 2) * BOX_SIZE;
     const startY = originY;
     const piece = new Piece(startX, startY, type, BOX_SIZE);
@@ -67,18 +89,67 @@ function spawnPiece() {
 }
 
 function fall() {
-    if (millis() - lastDrop >= dropInterval) {
-        lastDrop = millis();
-        if (!tryMove(activePiece, 0, BOX_SIZE)) lockPiece();
+    const now = millis();
+    if (now - lastDrop >= dropInterval) {
+        lastDrop = now;
+        if (tryMove(activePiece, 0, BOX_SIZE)) {
+            lockStartedAt = 0;
+        } else if (lockStartedAt === 0) {
+            lockStartedAt = now;
+        } else if (now - lockStartedAt >= LOCK_DELAY) {
+            lockPiece();
+        }
+    } else if (lockStartedAt !== 0 && canMove(activePiece, 0, BOX_SIZE)) {
+        lockStartedAt = 0;
     }
 }
 
-function tryMove(piece, x, y) {
+function handleHeldInput() {
+    const now = millis();
+
+    let horizontalDir = 0;
+    if (leftHeld && !rightHeld) horizontalDir = -1;
+    else if (rightHeld && !leftHeld) horizontalDir = 1;
+    else if (leftHeld && rightHeld) {
+        if (lastHorizontalDir === -1) horizontalDir = -1;
+        if (lastHorizontalDir === 1) horizontalDir = 1;
+    }
+
+    if (horizontalDir !== 0 && now >= nextHorizontalMove) {
+        if (tryMove(activePiece, horizontalDir * BOX_SIZE, 0)) {
+            resetLockDelay();
+        }
+        nextHorizontalMove = now + HORIZONTAL_REPEAT_INTERVAL;
+    }
+
+    if (downHeld && now >= nextSoftDrop) {
+        if (tryMove(activePiece, 0, BOX_SIZE)) {
+            score += 1;
+            lastDrop = now;
+            lockStartedAt = 0;
+        }
+        nextSoftDrop = now + SOFT_DROP_INTERVAL;
+    }
+}
+
+function canMove(piece, x, y) {
     piece.move(x, y);
-    if (collidesWithBoard(piece) || outOfBounds(piece)) {
-        piece.move(-x, -y);
+    const blocked = collidesWithBoard(piece) || outOfBounds(piece);
+    piece.move(-x, -y);
+    return !blocked;
+}
+
+function resetLockDelay() {
+    if (!activePiece) return;
+    lockStartedAt = 0;
+    lastDrop = millis();
+}
+
+function tryMove(piece, x, y) {
+    if (!canMove(piece, x, y)) {
         return false;
     }
+    piece.move(x, y);
     return true;
 }
 
@@ -110,6 +181,26 @@ function lockPiece() {
     });
     updateScore(clearLines());
     activePiece = spawnPiece();
+    holdUsed = false;
+    lockStartedAt = 0;
+    lastDrop = millis();
+}
+
+function holdPiece() {
+    if (!activePiece || holdUsed) return;
+
+    const currentType = activePiece.type;
+    if (holdType === null) {
+        holdType = currentType;
+        activePiece = spawnPiece();
+    } else {
+        const swapType = holdType;
+        holdType = currentType;
+        activePiece = spawnPieceOfType(swapType);
+    }
+
+    holdUsed = true;
+    lockStartedAt = 0;
     lastDrop = millis();
 }
 
@@ -222,37 +313,67 @@ function drawActivePiece() {
 }
 
 function drawSidebar() {
-    const panelX = originX + BOARD_W + 20;
+    const leftPanelX = originX - (5 * BOX_SIZE) - 24;
+    const rightPanelX = originX + BOARD_W + 20;
     const panelY = originY;
-    fill(200); 
-    noStroke(); 
-    textAlign(LEFT, TOP);
-    textSize(14); text("SCORE", panelX, panelY);
-    textSize(22); text(score, panelX, panelY + 18);
-    textSize(14); text("LEVEL", panelX, panelY + 60);
-    textSize(22); text(level, panelX, panelY + 78);
-    textSize(14); text("LINES", panelX, panelY + 120);
-    textSize(22); text(linesCleared, panelX, panelY + 138);
-    textSize(14); text("NEXT", panelX, panelY + 190);
-    const previewX = panelX;
-    const previewY = panelY + 210;
-    fill(15); 
-    noStroke();
-    rect(previewX, previewY, 5 * BOX_SIZE, 4 * BOX_SIZE);
-    if (nextType) {
-        const cells = Piece.SHAPES[nextType].cells;
-        const clr   = Piece.SHAPES[nextType].color;
+    const previewW = 5 * BOX_SIZE;
+    const previewH = 4 * BOX_SIZE;
+
+    function drawPreviewPiece(type, x, y) {
+        if (!type) return;
+        const cells = Piece.SHAPES[type].cells;
+        const clr = Piece.SHAPES[type].color;
+        const rows = cells.map(([r]) => r);
+        const cols = cells.map(([, c]) => c);
+        const minRow = Math.min(...rows);
+        const maxRow = Math.max(...rows);
+        const minCol = Math.min(...cols);
+        const maxCol = Math.max(...cols);
+        const shapeW = (maxCol - minCol + 1) * BOX_SIZE;
+        const shapeH = (maxRow - minRow + 1) * BOX_SIZE;
+        const offsetX = Math.floor((previewW - shapeW) / 2) - minCol * BOX_SIZE;
+        const offsetY = Math.floor((previewH - shapeH) / 2) - minRow * BOX_SIZE;
+
         cells.forEach(([r, c]) =>
-            drawBox(previewX + c * BOX_SIZE, previewY + r * BOX_SIZE, BOX_SIZE, clr)
+            drawBox(x + offsetX + c * BOX_SIZE, y + offsetY + r * BOX_SIZE, BOX_SIZE, clr)
         );
     }
+
+    fill(255); 
+    noStroke(); 
+    textAlign(LEFT, TOP);
+    textSize(14); text("HOLD", leftPanelX, panelY);
+    const holdPreviewX = leftPanelX;
+    const holdPreviewY = panelY + 20;
+    fill(15); 
+    noStroke();
+    rect(holdPreviewX, holdPreviewY, previewW, previewH);
+    drawPreviewPiece(holdType, holdPreviewX, holdPreviewY);
+
+    fill(255);
+    textSize(14); text("SCORE", leftPanelX, panelY + 160);
+    textSize(22); text(score, leftPanelX, panelY + 178);
+    textSize(14); text("LEVEL", leftPanelX, panelY + 214);
+    textSize(22); text(level, leftPanelX, panelY + 232);
+    textSize(14); text("LINES", leftPanelX, panelY + 268);
+    textSize(22); text(linesCleared, leftPanelX, panelY + 286);
+
+    textSize(14); text("NEXT", rightPanelX, panelY);
+    const nextPreviewX = rightPanelX;
+    const nextPreviewY = panelY + 20;
+    fill(15);
+    noStroke();
+    rect(nextPreviewX, nextPreviewY, previewW, previewH);
+    drawPreviewPiece(nextType, nextPreviewX, nextPreviewY);
+
     textSize(12); 
-    fill(140);
-    text("← →    move", panelX, panelY + 380);
-    text("↑      rotate", panelX, panelY + 398);
-    text("↓      soft drop", panelX, panelY + 416);
-    text("SPACE  hard drop", panelX, panelY + 434);
-    text("ESC    pause", panelX, panelY + 452);
+    fill(255);
+    text("← →    move", rightPanelX, panelY + 170);
+    text("↑      rotate", rightPanelX, panelY + 188);
+    text("↓      soft drop", rightPanelX, panelY + 206);
+    text("SPACE  hard drop", rightPanelX, panelY + 224);
+    text("C      hold", rightPanelX, panelY + 242);
+    text("ESC    pause", rightPanelX, panelY + 260);
 }
 //temp game over screen til we have a ui/screen built for it
 function drawGameOver() {
@@ -289,17 +410,28 @@ function keyPressed() {
     if (paused || !activePiece) return;
     switch (keyCode) {
         case LEFT_ARROW:
-            tryMove(activePiece, -BOX_SIZE, 0);
+            leftHeld = true;
+            lastHorizontalDir = -1;
+            if (tryMove(activePiece, -BOX_SIZE, 0)) resetLockDelay();
+            nextHorizontalMove = millis() + HORIZONTAL_REPEAT_DELAY;
             break;
         case RIGHT_ARROW: 
-            tryMove(activePiece,  BOX_SIZE, 0); 
+            rightHeld = true;
+            lastHorizontalDir = 1;
+            if (tryMove(activePiece,  BOX_SIZE, 0)) resetLockDelay(); 
+            nextHorizontalMove = millis() + HORIZONTAL_REPEAT_DELAY;
             break;
         case DOWN_ARROW:
-            if (tryMove(activePiece, 0, BOX_SIZE)) score += 1;
+            downHeld = true;
+            if (tryMove(activePiece, 0, BOX_SIZE)) {
+                score += 1;
+                lockStartedAt = 0;
+            }
             lastDrop = millis();
+            nextSoftDrop = millis() + SOFT_DROP_INTERVAL;
             break;
         case UP_ARROW:
-            activePiece.rotate(COLS, ROWS, originX, originY, board);
+            if (activePiece.rotate(COLS, ROWS, originX, originY, board)) resetLockDelay();
             break;
         case 32:
             let dropped = 0;
@@ -307,6 +439,27 @@ function keyPressed() {
             score += dropped * 2;
             lockPiece();
             break;
+        case 67:
+            holdPiece();
+            break;
+    }
+}
+
+function keyReleased() {
+    if (keyCode === LEFT_ARROW) {
+        leftHeld = false;
+        if (rightHeld) {
+            lastHorizontalDir = 1;
+            nextHorizontalMove = millis() + HORIZONTAL_REPEAT_DELAY;
+        }
+    } else if (keyCode === RIGHT_ARROW) {
+        rightHeld = false;
+        if (leftHeld) {
+            lastHorizontalDir = -1;
+            nextHorizontalMove = millis() + HORIZONTAL_REPEAT_DELAY;
+        }
+    } else if (keyCode === DOWN_ARROW) {
+        downHeld = false;
     }
 }
 
@@ -319,6 +472,15 @@ function resetGame() {
     dropInterval = 500;
     gameOver = false;
     paused = false;
+    holdType = null;
+    holdUsed = false;
+    leftHeld = false;
+    rightHeld = false;
+    downHeld = false;
+    lastHorizontalDir = 0;
+    nextHorizontalMove = 0;
+    nextSoftDrop = 0;
+    lockStartedAt = 0;
     nextType = randomPiece();
     activePiece  = spawnPiece();
     lastDrop = millis();

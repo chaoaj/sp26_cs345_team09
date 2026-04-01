@@ -11,7 +11,7 @@ class Piece {
         "4Line" : {color: "lightblue", cells: [[0,0],[0,1],[0,2],[0,3]]},
         "L" : {color: "orange", cells: [[0,0],[1,0],[2,0],[2,1]]},
         "BackL" : {color: "blue", cells: [[0,1],[1,1],[2,0],[2,1]]},
-        "T" : {color: "purple", cells: [[0,0],[0,1],[0,2],[1,1]]},
+        "T" : {color: "purple", cells: [[0,1],[1,0],[1,1],[1,2]]},
         "S" : {color: "green", cells: [[0,1],[0,2],[1,0],[1,1]]},
         "Z" : {color: "red", cells: [[0,0],[0,1],[1,1],[1,2]]},
         "2by2" : {color: "yellow", cells: [[0,0],[0,1],[1,0],[1,1]]},
@@ -40,16 +40,11 @@ class Piece {
         const minCol  = Math.min(...rotated.map(([, c]) => c));
         return rotated.map(([r, c]) => [r - minRow, c - minCol]);
     }
-
-    rotate(boardCols, boardRows, originX, originY, board) {
-        let cells = Piece.SHAPES[this.type].cells;
-        for (let i = 0; i < this.rotation; i++)
-            cells = Piece.rotateCells(cells);
-        const nextCells = Piece.rotateCells(cells);
-        for (const [row, col] of nextCells) {
-            const newX = this.x + col * this.boxSize;
-            const newY = this.y + row * this.boxSize;
-            //bounds check
+    //checks if piece can be placed at given offset without colliding with board edges or existing pieces   
+    canPlace(cells, offsetX, offsetY, boardCols, boardRows, originX, originY, board) {
+        for (const [row, col] of cells) {
+            const newX = this.x + offsetX + col * this.boxSize;
+            const newY = this.y + offsetY + row * this.boxSize;
             if (newX < originX || newX + this.boxSize > originX + boardCols * this.boxSize) return false;
             if (newY < originY || newY + this.boxSize > originY + boardRows * this.boxSize) return false;
             //board collision check
@@ -59,15 +54,45 @@ class Piece {
                 boardCol >= 0 && boardCol < boardCols &&
                 board[boardRow][boardCol] !== null) return false;
         }
-        this.rotation = (this.rotation + 1) % 4;
-        this.boxes = nextCells.map(([row, col]) =>
-            new Box(
-                this.x + col * this.boxSize,
-                this.y + row * this.boxSize,
-                this.boxSize
-            )
-        );
         return true;
+    }
+    //rotating the piece with wall kicks to prevent it from going off the board or colliding with existing pieces
+    rotate(boardCols, boardRows, originX, originY, board) {
+        let cells = Piece.SHAPES[this.type].cells;
+        for (let i = 0; i < this.rotation; i++)
+            cells = Piece.rotateCells(cells);
+        const nextCells = Piece.rotateCells(cells);
+        const kicks = [
+            [0, 0],
+            [-this.boxSize, 0],
+            [this.boxSize, 0],
+            [-2 * this.boxSize, 0],
+            [2 * this.boxSize, 0],
+            [0, -this.boxSize],
+            [-this.boxSize, -this.boxSize],
+            [this.boxSize, -this.boxSize],
+            [0, -2 * this.boxSize],
+        ];
+
+        for (const [offsetX, offsetY] of kicks) {
+            if (!this.canPlace(nextCells, offsetX, offsetY, boardCols, boardRows, originX, originY, board)) {
+                continue;
+            }
+
+            this.rotation = (this.rotation + 1) % 4;
+            this.x += offsetX;
+            this.y += offsetY;
+            this.boxes = nextCells.map(([row, col]) =>
+                new Box(
+                    this.x + col * this.boxSize,
+                    this.y + row * this.boxSize,
+                    this.boxSize
+                )
+            );
+            return true;
+        }
+
+        return false;
     }
 
     move(x, y) {
