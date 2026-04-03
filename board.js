@@ -20,6 +20,8 @@ let dropInterval = 500;
 let lastDrop = 0;
 let holdType = null;
 let holdUsed = false;
+let pieceBag = 30;
+let numLockedPieces = 0;
 
 let leftHeld = false;
 let rightHeld = false;
@@ -178,12 +180,21 @@ function lockPiece() {
         const row = Math.round((b.y - originY) / BOX_SIZE);
         if (row >= 0 && row < ROWS && col >= 0 && col < COLS)
             board[row][col] = {color : activePiece.color};
+
     });
     updateScore(clearLines());
+    //increment numLockedpieces.
+    numLockedPieces++;
+    console.log(numLockedPieces);
+    //check if numLockedPieces is less than the bag.
+    if (numLockedPieces >= pieceBag) {
+        gameOver = true;
+    }
     activePiece = spawnPiece();
     holdUsed = false;
     lockStartedAt = 0;
     lastDrop = millis();
+
 }
 
 function holdPiece() {
@@ -357,6 +368,8 @@ function drawSidebar() {
     textSize(22); text(level, leftPanelX, panelY + 232);
     textSize(14); text("LINES", leftPanelX, panelY + 268);
     textSize(22); text(linesCleared, leftPanelX, panelY + 286);
+    textSize(14); text("PIECES LEFT", leftPanelX, panelY + 320);
+    textSize(22); text(pieceBag - numLockedPieces, leftPanelX, panelY + 340);
 
     textSize(14); text("NEXT", rightPanelX, panelY);
     const nextPreviewX = rightPanelX;
