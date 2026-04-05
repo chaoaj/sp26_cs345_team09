@@ -598,6 +598,7 @@ function resetGame() {
     scoreRequirement = 500;
     scoreIncrement = 500;
     scoreFactor = 2;
+    stage = 1;
     level = 1;
     linesCleared = 0;
     numLockedPieces = 0;
