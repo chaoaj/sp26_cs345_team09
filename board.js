@@ -24,7 +24,7 @@ let dropInterval = 500;
 let lastDrop = 0;
 let holdType = null;
 let holdUsed = false;
-let pieceBag = 30;
+let pieceBag = 25;
 let numLockedPieces = 0;
 
 // gameState will tell the program what should be rendered and processed.
@@ -325,6 +325,7 @@ function updateStage() {
     console.log("updating stage!");
     level = 1;
     stage++;
+    pieceBag += 15;
     scoreRequirement *= scoreFactor;
     scoreIncrement *= scoreFactor;
     scoreFactor *= 2;
@@ -475,8 +476,8 @@ function drawSidebar() {
     textSize(22); text(scoreRequirement, leftPanelX, panelY + 180);
     textSize(14); text("SCORE", leftPanelX, panelY + 210);
     textSize(22); text(score, leftPanelX, panelY + 230);
-    textSize(14); text("LEVEL", leftPanelX, panelY + 260);
-    textSize(22); text(level, leftPanelX, panelY + 280);
+    textSize(14); text("STAGE, LEVEL", leftPanelX, panelY + 260);
+    textSize(22); text(stage + ", " + level, leftPanelX, panelY + 280);
     textSize(14); text("LINES", leftPanelX, panelY + 310);
     textSize(22); text(linesCleared, leftPanelX, panelY + 330);
     textSize(14); text("PIECES LEFT", leftPanelX, panelY + 360);
