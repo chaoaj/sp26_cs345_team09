@@ -8,10 +8,40 @@ canvas {
 }
 
 .start-menu {
-  color: rgb(11, 74, 52);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 10px;
+}
+
+.logo {
   display: flex;
   flex-direction: row;
   justify-content: center;
-  align-items: baseline;
+  align-items: center;
+}
+
+.logo img {
+  width: 500px;
+  height: auto;
+}
+
+.popup {
+  position: absolute;
+  top: 60px;
+  background: white;
+  border: 2px solid black;
+  padding: 20px;
+  width: 250px;
+  box-shadow: 0 6px 15px rgba(2, 78, 2, 0.5);
+  border-radius: 4px;
+}
+
+.hidden {
+  display: none;
+}
+
+.settings-btn {
   margin: 10px;
+  padding: 10px;
 }

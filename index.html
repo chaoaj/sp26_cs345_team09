@@ -7,13 +7,14 @@
     <title>Reliquae</title>
 
     <link rel="stylesheet" type="text/css" href="style.css">
+    <script src="homescreen.js"></script>
 
   </head>
 
   <body>
     <header>
-      <h1>
-        
+      <h1 class="logo">
+        <img src="assets\logo.png">
       </h1>
     </header>
 
@@ -23,6 +24,24 @@
           <button type="submit">Start Game</button>
         </form>
       </section>
+      <div class="start-menu">
+        <button id="settings-btn">Settings</button>
+
+        <div id="settings-popup" class="popup hidden">
+          <h3>Settings</h3>
+          <label>
+            Volume
+            <input type="range" min="0" max="100">
+          </label>
+          <br><br>
+          <label>
+            Dark Mode
+            <input type="checkbox">
+          </label>
+          <br><br>
+          <button id="close-btn">Close</button>
+        </div>
+      </div>
     </main>
   </body>
 </html>
