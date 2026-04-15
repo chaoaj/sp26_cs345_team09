@@ -714,7 +714,7 @@ function mouseWheel(event) {
 
 function handleRegionClick(r) {
   if (r.id === 'start') {
-    window.location.href = 'index.html';
+    window.location.href = 'gamePage.html';
   } else if (r.id === 'settings') {
     modalOpen = true;
     kbScrollY = 0;
