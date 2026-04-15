@@ -187,12 +187,9 @@ function updateParticle(p) {
   }
   const a = Math.sin((p.life / p.maxLife) * Math.PI) * 0.7;
   push();
-
-  // shadow and globalAlpha have no p5 equivalent
   drawingContext.globalAlpha = a;
   drawingContext.shadowBlur = p.size * 5;
   drawingContext.shadowColor = p.color;
-
   fill(p.color);
   noStroke();
   circle(p.x, p.y, p.size * 2);
