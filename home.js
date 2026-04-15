@@ -26,6 +26,32 @@ const sliders = [
   {label:'SFX Volume', value:75},
 ];
 const buttonHover = {start:0, settings:0, quit:0};
+//menu
+const MENU_BTNS = [
+  {id:'start', label:'START', style:'start'},
+  {id:'settings', label:'SETTINGS', style:'settings'},
+  {id:'quit', label:'QUIT', style:'quit'},
+];
+const BTN_STYLES = {
+  start: {
+    grad: ['#1a6b24','#27a83a','#1a8030'],
+    glow: 'rgba(39,168,58,',
+    border: 'rgba(61,219,82,',
+    text: '#e8fce0',
+  },
+  settings: {
+    grad: ['#7a4a08','#c88020','#9a6010'],
+    glow: 'rgba(200,128,32,',
+    border: 'rgba(255,208,96,',
+    text: '#fff8e8',
+  },
+  quit: {
+    grad: ['#6a1010','#b02020','#7a1818'],
+    glow: 'rgba(176,32,32,',
+    border: 'rgba(240,64,48,',
+    text: '#ffe8e8',
+  },
+};
 
 let cx;
 let vines = [], particles = [];
@@ -237,32 +263,6 @@ function drawLogoArea() {
     pop();
   }
 }
-//menu
-const MENU_BTNS = [
-  {id:'start', label:'START', style:'start'},
-  {id:'settings', label:'SETTINGS', style:'settings'},
-  {id:'quit', label:'QUIT', style:'quit'},
-];
-const BTN_STYLES = {
-  start: {
-    grad: ['#1a6b24','#27a83a','#1a8030'],
-    glow: 'rgba(39,168,58,',
-    border: 'rgba(61,219,82,',
-    text: '#e8fce0',
-  },
-  settings: {
-    grad: ['#7a4a08','#c88020','#9a6010'],
-    glow: 'rgba(200,128,32,',
-    border: 'rgba(255,208,96,',
-    text: '#fff8e8',
-  },
-  quit: {
-    grad: ['#6a1010','#b02020','#7a1818'],
-    glow: 'rgba(176,32,32,',
-    border: 'rgba(240,64,48,',
-    text: '#ffe8e8',
-  },
-};
 
 function drawMenu() {
   const buttonW = min(260, width * 0.42);
