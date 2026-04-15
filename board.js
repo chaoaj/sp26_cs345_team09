@@ -42,6 +42,17 @@ let nextHorizontalMove = 0;
 let nextSoftDrop = 0;
 let lockStartedAt = 0;
 
+let binds = [
+  {action:'Move Left', key:'A'},
+  {action:'Move Right', key:'D'},
+  {action:'Soft Drop', key:'S'},
+  {action:'Hard Drop', key:' '},
+  {action:'Rotate', key:'W'},
+  {action:'Hold Piece', key:'C'},
+  {action:'Pause', key:'P'},
+];
+let keyMap = {};
+
 const HORIZONTAL_REPEAT_DELAY = 140;
 const HORIZONTAL_REPEAT_INTERVAL = 55;
 const SOFT_DROP_INTERVAL = 45;
@@ -49,6 +60,7 @@ const LOCK_DELAY = 450;
 //switched to millis which counts milliseconds instead of frameCount so we can track in time instead of converting and manipulating draw speeds
 function setup() {
     createCanvas(windowWidth, windowHeight);
+    setBinds();
     originX = (width - BOARD_W) / 2;
     originY = (height - BOARD_H) / 2;
     for (const type of PIECE_TYPES) {
@@ -482,10 +494,6 @@ function mouseClicked() {
 }
 
 function keyPressed() {
-    if (keyCode === 27) {
-        paused = !paused; 
-        return;
-    }
     if (gameState === "shop") {
         shopKeyPressed(key);
         return;
@@ -497,60 +505,66 @@ function keyPressed() {
         }
     }
     if (paused || !activePiece) return;
-    switch (keyCode) {
-        case LEFT_ARROW:
+    const action = keyMap[key.toLowerCase()];
+    if(!action) return;
+
+    switch(action) {
+        case "Pause" : 
+            paused = !paused; 
+            return;
+        case "Move Left" :
             leftHeld = true;
             lastHorizontalDir = -1;
             if (tryMove(activePiece, -BOX_SIZE, 0)) resetLockDelay();
             nextHorizontalMove = millis() + HORIZONTAL_REPEAT_DELAY;
             break;
-        case RIGHT_ARROW: 
+        case "Move Right" :
             rightHeld = true;
             lastHorizontalDir = 1;
             if (tryMove(activePiece, BOX_SIZE, 0)) resetLockDelay(); 
             nextHorizontalMove = millis() + HORIZONTAL_REPEAT_DELAY;
             break;
-        case DOWN_ARROW:
+        case "Soft Drop" :
             downHeld = true;
             if (tryMove(activePiece, 0, BOX_SIZE)) {
-                score += 1;
+                //score += 1; //here if you want to make easier for testing
                 lockStartedAt = 0;
             }
             lastDrop = millis();
             nextSoftDrop = millis() + SOFT_DROP_INTERVAL;
             break;
-        case UP_ARROW:
+        case "Rotate" :
             if (!noRotate && activePiece.rotate(COLS, ROWS, originX, originY, board)) resetLockDelay();
             break;
-            // spacebar
-        case 32:
+        case "Hard Drop" :
             let dropped = 0;
-            //
             while (tryMove(activePiece, 0, BOX_SIZE)) dropped++;
             score += dropped * 2;
             lockPiece();
             break;
-            // "c"
-        case 67:
+        case "Hold Piece" :
             holdPiece();
             break;
     }
 }
 
 function keyReleased() {
-    if (keyCode === LEFT_ARROW) {
+    const action = keyMap[key.toLowerCase()];
+    if(!action) return;
+
+    if (action === 'Move Left') {
         leftHeld = false;
         if (rightHeld) {
             lastHorizontalDir = 1;
             nextHorizontalMove = millis() + HORIZONTAL_REPEAT_DELAY;
         }
-    } else if (keyCode === RIGHT_ARROW) {
+    } else if (action === 'Move Right') {
         rightHeld = false;
         if (leftHeld) {
             lastHorizontalDir = -1;
             nextHorizontalMove = millis() + HORIZONTAL_REPEAT_DELAY;
         }
-    } else if (keyCode === DOWN_ARROW) {
+    } else if (action === 'Soft Drop') {
         downHeld = false;
     }
 }
@@ -613,4 +627,11 @@ function closeShop() {
     gameState = "standard";
     softReset();
     dropInterval = Math.max(80, 500 - (stage - 1) * 100);
+}
+
+function setBinds() {
+    binds = JSON.parse(localStorage.getItem('rq_binds') || 'null') || binds;
+    for (const bind of binds) {
+        keyMap[bind.key.toLowerCase()] = bind.action;
+    }
 }

@@ -4,7 +4,7 @@ const DEFAULT_BINDS = [
   {action:'Move Right', key:'D'},
   {action:'Soft Drop', key:'S'},
   {action:'Hard Drop', key:' '},
-  {action:'Rotate CW', key:'W'},
+  {action:'Rotate', key:'W'},
   {action:'Hold Piece', key:'C'},
   {action:'Pause', key:'P'},
 ];
