@@ -30,7 +30,7 @@ let skipNextBoss = false;
 let pieceBag = 30;
 let numLockedPieces = 0;
 
-// gameState will tell the program what should be rendered and processed.
+// gameState will tell the program what should be rendered and processed
 // valid states: menu, standard, boss, shop
 let gameState = "standard";
 
@@ -49,7 +49,7 @@ const LOCK_DELAY = 450;
 //switched to millis which counts milliseconds instead of frameCount so we can track in time instead of converting and manipulating draw speeds
 function setup() {
     createCanvas(windowWidth, windowHeight);
-    originX = (width  - BOARD_W) / 2;
+    originX = (width - BOARD_W) / 2;
     originY = (height - BOARD_H) / 2;
     for (const type of PIECE_TYPES) {
         const clr = Piece.SHAPES[type].color;
@@ -57,7 +57,7 @@ function setup() {
             loadImage(
                 "assets/tile_" + clr + ".png",
                 img => {SPRITES[clr] = img;},
-                ()  => {SPRITES[clr] = null;}
+                () => {SPRITES[clr] = null;}
             );
         }
     }
@@ -65,9 +65,7 @@ function setup() {
     activePiece = spawnPiece();
     lastDrop = millis();
 }
-/**
- * 
- */
+
 function draw() {
     background(30);
     if (gameState === "standard") {
@@ -82,32 +80,21 @@ function draw() {
     }
     if (gameState === "shop") drawShop();
     if (gameOver) drawGameOver();
-    if (paused)   drawPaused();
+    if (paused) drawPaused();
 }
 
-/**
- * 
- * @returns string with a piece type from PIECE_TYPES array.
- */
+
 function randomPiece() {
     return PIECE_TYPES[Math.floor(Math.random() * PIECE_TYPES.length)];
 }
 
-/**
- * 
- * @returns a call to the spawnPieceOfType function, generates a random piece with randomPiece()
- */
+
 function spawnPiece() {
     const type = nextType;
     nextType = randomPiece();
     return spawnPieceOfType(type);
 }
 
-/**
- * creates a new piece object given type
- * @param type the type of piece to be made. 
- * @returns a new piece object given type.
- */
 function spawnPieceOfType(type) {
     const startX = originX + Math.floor((COLS - 4) / 2) * BOX_SIZE;
     const startY = originY;
@@ -118,9 +105,7 @@ function spawnPieceOfType(type) {
     }
     return piece;
 }
-/**
- * 
- */
+
 function fall() {
     const now = millis();
     if (now - lastDrop >= dropInterval) {
@@ -136,9 +121,7 @@ function fall() {
         lockStartedAt = 0;
     }
 }
-/**
- * 
- */
+
 function handleHeldInput() {
     const now = millis();
 
@@ -166,35 +149,20 @@ function handleHeldInput() {
         nextSoftDrop = now + SOFT_DROP_INTERVAL;
     }
 }
-/**
- * 
- * @param {*} piece 
- * @param {*} x 
- * @param {*} y 
- * @returns 
- */
+
 function canMove(piece, x, y) {
     piece.move(x, y);
     const blocked = collidesWithBoard(piece) || outOfBounds(piece);
     piece.move(-x, -y);
     return !blocked;
 }
-/**
- * 
- * @returns 
- */
+
 function resetLockDelay() {
     if (!activePiece) return;
     lockStartedAt = 0;
     lastDrop = millis();
 }
-/**
- * 
- * @param {*} piece 
- * @param {*} x 
- * @param {*} y 
- * @returns 
- */
+
 function tryMove(piece, x, y) {
     if (!canMove(piece, x, y)) {
         return false;
@@ -202,11 +170,7 @@ function tryMove(piece, x, y) {
     piece.move(x, y);
     return true;
 }
-/**
- * 
- * @param {*} piece 
- * @returns 
- */
+
 function outOfBounds(piece) {
     return piece.boxes.some(b =>
         b.x < originX ||
@@ -214,11 +178,7 @@ function outOfBounds(piece) {
         b.y + BOX_SIZE > originY + BOARD_H
     );
 }
-/**
- * 
- * @param {*} piece 
- * @returns 
- */
+
 function collidesWithBoard(piece) {
     return piece.boxes.some(b => {
         const col = Math.round((b.x - originX) / BOX_SIZE);
@@ -252,10 +212,7 @@ function lockPiece() {
     lastDrop = millis();
 
 }
-/**
- * 
- * @returns 
- */
+
 function holdPiece() {
     if (!activePiece || holdUsed) return;
 
@@ -273,10 +230,7 @@ function holdPiece() {
     lockStartedAt = 0;
     lastDrop = millis();
 }
-/**
- * 
- * @returns 
- */
+
 function clearLines() {
     let cleared = 0;
     for (let r = ROWS - 1; r >= 0; r--) {
@@ -291,10 +245,7 @@ function clearLines() {
     }
     return cleared;
 }
-/**
- * 
- * @param {*} cleared 
- */
+
 function updateScore(cleared) {
     //score is arbitrary rn, can tune balancing and how we want score later
     linesCleared += cleared;
@@ -303,11 +254,7 @@ function updateScore(cleared) {
         updateLevel();
     }
 }
-/**
- * updates level, will increment stage if level == 3.
- * also increases score
- * calls softReset()
- */
+
 function updateLevel() {
     console.log("updating level!");
     switch (level) {
@@ -343,11 +290,7 @@ function activateBoss() {
             break;
     }
 }
-/**
- * updates Stage
- * increases score as well as the factor by which score increases.
- * softReset() is called by updateLevel().
- */
+
 function updateStage() {
     console.log("updating stage!");
     level = 1;
@@ -387,13 +330,7 @@ function getGhostPiece() {
     }
     return ghost;
 }
-/**
- * 
- * @param {*} x 
- * @param {*} y 
- * @param {*} size 
- * @param {*} clr 
- */
+
 function drawBox(x, y, size, clr) {
     const spr = SPRITES[clr];
     if (spr) {
@@ -411,9 +348,7 @@ function drawBox(x, y, size, clr) {
         line(x + 1, y + 1, x + 1, y + size - 1);
     }
 }
-/**
- * 
- */
+
 function drawBoard() {
     fill(15); 
     noStroke();
@@ -433,10 +368,7 @@ function drawBoard() {
     strokeWeight(2);
     rect(originX, originY, BOARD_W, BOARD_H);
 }
-/**
- * 
- * @returns 
- */
+
 function drawGhost() {
     const ghost = getGhostPiece();
     if (!ghost) return;
@@ -447,17 +379,12 @@ function drawGhost() {
         rect(b.x, b.y, b.size, b.size);
     });
 }
-/**
- * 
- * @returns 
- */
+
 function drawActivePiece() {
     if (!activePiece) return;
     activePiece.boxes.forEach(b => drawBox(b.x, b.y, b.size, activePiece.color));
 }
-/**
- * 
- */
+
 function drawSidebar() {
     const leftPanelX = originX - (5 * BOX_SIZE) - 24;
     const rightPanelX = originX + BOARD_W + 20;
@@ -497,8 +424,6 @@ function drawSidebar() {
     drawPreviewPiece(holdType, holdPreviewX, holdPreviewY);
 
     fill(255);
-    // UI elements here should have a distance of 20, between their descriptor and value
-    // and a distance of 50 between other descriptors
     textSize(14); text("GOAL", leftPanelX, panelY + 160);
     textSize(22); text(scoreRequirement, leftPanelX, panelY + 180);
     textSize(14); text("SCORE", leftPanelX, panelY + 210);
@@ -520,12 +445,12 @@ function drawSidebar() {
 
     textSize(12); 
     fill(255);
-    text("← →    move", rightPanelX, panelY + 170);
-    text("↑      rotate", rightPanelX, panelY + 188);
-    text("↓      soft drop", rightPanelX, panelY + 206);
-    text("SPACE  hard drop", rightPanelX, panelY + 224);
-    text("C      hold", rightPanelX, panelY + 242);
-    text("ESC    pause", rightPanelX, panelY + 260);
+    text("← → move", rightPanelX, panelY + 170);
+    text("↑ rotate", rightPanelX, panelY + 188);
+    text("↓ soft drop", rightPanelX, panelY + 206);
+    text("SPACE hard drop", rightPanelX, panelY + 224);
+    text("C hold", rightPanelX, panelY + 242);
+    text("ESC pause", rightPanelX, panelY + 260);
 }
 //temp game over screen til we have a ui/screen built for it
 function drawGameOver() {
@@ -582,7 +507,7 @@ function keyPressed() {
         case RIGHT_ARROW: 
             rightHeld = true;
             lastHorizontalDir = 1;
-            if (tryMove(activePiece,  BOX_SIZE, 0)) resetLockDelay(); 
+            if (tryMove(activePiece, BOX_SIZE, 0)) resetLockDelay(); 
             nextHorizontalMove = millis() + HORIZONTAL_REPEAT_DELAY;
             break;
         case DOWN_ARROW:
@@ -629,7 +554,6 @@ function keyReleased() {
         downHeld = false;
     }
 }
-
 // restarts the game
 function resetGame() {
     board = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
@@ -649,6 +573,7 @@ function resetGame() {
     leftHeld = false;
     rightHeld = false;
     downHeld = false;
+    noRotate = false;
     lastHorizontalDir = 0;
     nextHorizontalMove = 0;
     nextSoftDrop = 0;
@@ -657,7 +582,6 @@ function resetGame() {
     activePiece  = spawnPiece();
     lastDrop = millis();
 }
-
 // restarts the game, but keeps various variables. Used for progressing levels and stages.
 function softReset() {
     board = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
@@ -668,7 +592,6 @@ function softReset() {
     leftHeld = false;
     rightHeld = false;
     downHeld = false;
-    noRotate = false;
     lastHorizontalDir = 0;
     nextHorizontalMove = 0;
     nextSoftDrop = 0;
@@ -682,13 +605,12 @@ function softReset() {
 //has a few issues with resizing mid piece drop.
 function windowResized() {
     resizeCanvas(windowWidth, windowHeight);
-    originX = (width  - BOARD_W) / 2;
+    originX = (width - BOARD_W) / 2;
     originY = (height - BOARD_H) / 2;
 }
 
 function closeShop() {
     gameState = "standard";
-    activateBoss();
     softReset();
     dropInterval = Math.max(80, 500 - (stage - 1) * 100);
 }
