@@ -313,6 +313,13 @@ function updateStage() {
     scoreFactor *= 2;
 }
 
+function getHindranceText() {
+    const hindrances = [];
+    if (noRotate) hindrances.push("No Rotates");
+    if (hindrances.length === 0) return "None";
+    return hindrances.join(", ");
+}
+
 
 //handles ghost pieces (aka the highlight of where the piece will land)
 function getGhostPiece() {
@@ -442,10 +449,15 @@ function drawSidebar() {
     textSize(22); text(score, leftPanelX, panelY + 230);
     textSize(14); text("STAGE, LEVEL", leftPanelX, panelY + 260);
     textSize(22); text(stage + ", " + level, leftPanelX, panelY + 280);
-    textSize(14); text("LINES", leftPanelX, panelY + 310);
-    textSize(22); text(linesCleared, leftPanelX, panelY + 330);
-    textSize(14); text("PIECES LEFT", leftPanelX, panelY + 360);
-    textSize(22); text(pieceBag - numLockedPieces, leftPanelX, panelY + 380);
+    textSize(14); text("HINDRANCE", leftPanelX, panelY + 310);
+    textSize(18);
+    fill(noRotate ? color(255, 110, 110) : color(220));
+    text(getHindranceText(), leftPanelX, panelY + 330, previewW + 24, 44);
+    fill(255);
+    textSize(14); text("LINES", leftPanelX, panelY + 380);
+    textSize(22); text(linesCleared, leftPanelX, panelY + 400);
+    textSize(14); text("PIECES LEFT", leftPanelX, panelY + 430);
+    textSize(22); text(pieceBag - numLockedPieces, leftPanelX, panelY + 450);
 
     textSize(14); text("NEXT", rightPanelX, panelY);
     const nextPreviewX = rightPanelX;
