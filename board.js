@@ -1,3 +1,5 @@
+import { initFirebase, submitScore } from './firebase.js';
+import { initShop, drawShop, shopMouseMoved, shopMouseClicked, shopKeyPressed } from './shop.js';
 const ROWS = 20;
 const COLS = 10;
 const BOX_SIZE = 32;
@@ -59,6 +61,8 @@ let settingsSliders = [
     {label: "Music Volume", value: 60},
     {label: "SFX Volume", value: 75},
 ];
+//leader board
+let scoreSubmitted = false;
 
 let binds = [
   {action:'Move Left', key:'A'},
@@ -80,8 +84,9 @@ const STAGE_INTRO_HOLD = 700;
 const STAGE_INTRO_FADE_OUT = 500;
 const STAGE_INTRO_DURATION = STAGE_INTRO_FADE_IN + STAGE_INTRO_HOLD + STAGE_INTRO_FADE_OUT;
 //switched to millis which counts milliseconds instead of frameCount so we can track in time instead of converting and manipulating draw speeds
-function setup() {
+window.setup = async function() {
     createCanvas(windowWidth, windowHeight);
+    await initFirebase();
     setBinds();
     originX = (width - BOARD_W) / 2;
     originY = (height - BOARD_H) / 2;
@@ -101,7 +106,7 @@ function setup() {
     beginStageIntro("standard");
 }
 
-function draw() {
+window.draw = function() {
     background(30);
     if (gameState === "stageIntro") {
         drawStageIntro();
@@ -117,7 +122,7 @@ function draw() {
             fall();
         }
     }
-    if (gameState === "shop") drawShop();
+    if (gameState === "shop") drawShop(recollectionUsed, recollection);
     if (gameOver) drawGameOver();
     if (paused) drawPaused();
 }
@@ -180,7 +185,8 @@ function spawnPieceOfType(type) {
     const startY = originY;
     const piece = new Piece(startX, startY, type, BOX_SIZE);
     if (collidesWithBoard(piece)) {
-        gameOver = true; 
+        gameOver = true;
+        submitFinalScore();
         return null;
     }
     return piece;
@@ -284,6 +290,7 @@ function lockPiece() {
     //check if numLockedPieces is less than the bag.
     if (numLockedPieces >= pieceBag) {
         gameOver = true;
+        submitFinalScore();
         return;
     }
     activePiece = spawnPiece();
@@ -1041,11 +1048,11 @@ function rebuildKeyMap() {
     }
 }
 
-function mouseMoved() {
+window.mouseMoved = function() {
     if (gameState === "shop") shopMouseMoved();
 }
 
-function mouseClicked() {
+window.mouseClicked = function() {
     if (settingsModalOpen) {
         for (const r of settingsRegions) {
             if (mouseX >= r.x && mouseX <= r.x + r.w && mouseY >= r.y && mouseY <= r.y + r.h) {
@@ -1069,10 +1076,10 @@ function mouseClicked() {
         handlePauseMenuClick();
         return;
     }
-    if (gameState === "shop") shopMouseClicked();
+    if (gameState === "shop") shopMouseClicked(getShopGameState());
 }
 
-function keyPressed() {
+window.keyPressed = function() {
     if (settingsModalOpen) {
         if (keyCode === ESCAPE) {
             if (settingsListening) {
@@ -1102,7 +1109,7 @@ function keyPressed() {
 
     if (gameState === "stageIntro") return;
     if (gameState === "shop") {
-        shopKeyPressed(key);
+        shopKeyPressed(key, getShopGameState());
         return;
     }
     if (gameOver) {
@@ -1159,7 +1166,7 @@ function keyPressed() {
     }
 }
 
-function keyReleased() {
+window.keyReleased = function() {
     const action = keyMap[key.toLowerCase()];
     if(!action) return;
 
@@ -1180,18 +1187,18 @@ function keyReleased() {
     }
 }
 
-function mouseDragged() {
+window.mouseDragged = function() {
     if (dragSlider === null) return;
     const s = settingsSliders[dragSlider.index];
     const dx = mouseX - dragSlider.startX;
     s.value = constrain(dragSlider.startVal + round(dx / dragSlider.trackW * 100), 0, 100);
   }
 
-function mouseReleased() {
+window.mouseReleased = function() {
     dragSlider = null;
 }
 
-function mouseWheel(event) {
+window.mouseWheel = function(event) {
     if (settingsModalOpen && settingsTab === 'keybinds') {
         kbScrollY = constrain(kbScrollY - event.delta * 0.4, -(binds.length * 36 - 180), 0);
         return false;
@@ -1236,6 +1243,7 @@ function resetGame() {
     activePiece  = spawnPiece();
     lastDrop = millis();
     beginStageIntro("standard");
+    scoreSubmitted = false;
 }
 // restarts the game, but keeps various variables. Used for progressing levels and stages.
 function softReset() {
@@ -1259,7 +1267,7 @@ function softReset() {
 //attempt for adjusting for window resize, we need to figure out exactly how we want to handle it whether
 //that is with ratios or with cap resolution and show a portion.
 //has a few issues with resizing mid piece drop.
-function windowResized() {
+window.windowResized = function() {
     resizeCanvas(windowWidth, windowHeight);
     originX = (width - BOARD_W) / 2;
     originY = (height - BOARD_H) / 2;
@@ -1274,4 +1282,42 @@ function closeShop() {
 function setBinds() {
     binds = JSON.parse(localStorage.getItem('rq_binds') || 'null') || binds;
     rebuildKeyMap();
+}
+
+//leader board stuff
+
+function getPlayerName() {
+  let playerName = localStorage.getItem('rq_player_name');
+
+  if (!playerName) {
+    playerName = prompt("Enter your name for the leaderboard:") || "Anonymous";
+    playerName = playerName.trim() || "Anonymous";
+    localStorage.setItem('rq_player_name', playerName);
+  }
+
+  return playerName;
+}
+
+async function submitFinalScore() {
+  if (scoreSubmitted) return;
+  scoreSubmitted = true;
+
+  const playerName = getPlayerName();
+  await submitScore(playerName, score);
+}
+
+function getShopGameState() {
+    return {
+        pieceBag,
+        dropInterval,
+        board,
+        COLS,
+        skipNextBoss,
+        holdUsed,
+        noRotate,
+        recollectionUsed,
+        recollection,
+        relicsHeld,
+        closeShop
+    };
 }

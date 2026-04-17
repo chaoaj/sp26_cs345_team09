@@ -7,9 +7,9 @@ const SHOP_ITEMS = [
         name: "Extra Pieces",
         description: "Add 5 pieces\nto your bag",
         cost: 1,
-        apply() {
+        apply(game) {
 
-            pieceBag += 5;
+            game.pieceBag += 5;
         }
     },
     {
@@ -17,8 +17,8 @@ const SHOP_ITEMS = [
         name: "Slow Fall",
         description: "Increase drop\ndelay by 75ms",
         cost: 1,
-        apply() {
-            dropInterval = Math.min(500, dropInterval + 75);
+        apply(game) {
+            game.dropInterval = Math.min(500, game.dropInterval + 75);
         }
     },
     {
@@ -26,10 +26,10 @@ const SHOP_ITEMS = [
         name: "Board Wipe",
         description: "Clear the\nbottom 5 rows",
         cost: 1,
-        apply() {
+        apply(game) {
             for (let i = 0; i < 5; i++) {
-                board.pop();
-                board.unshift(Array(COLS).fill(null));
+                game.board.pop();
+                game.board.unshift(Array(COLS).fill(null));
             }
         }
     },
@@ -38,8 +38,8 @@ const SHOP_ITEMS = [
         name: "Peace Treaty",
         description: "Skip the next\nboss effect",
         cost: 1,
-        apply() {
-            skipNextBoss = true;
+        apply(game) {
+            game.skipNextBoss = true;
         }
     },
     {
@@ -47,8 +47,8 @@ const SHOP_ITEMS = [
         name: "Hold Refresh",
         description: "Reset hold so\nyou can use it",
         cost: 1,
-        apply() {
-            holdUsed = false;
+        apply(game) {
+            game.holdUsed = false;
         }
     },
     {
@@ -56,9 +56,9 @@ const SHOP_ITEMS = [
         name: "Free Spin",
         description: "Ignore no-rotate\nfor next level",
         cost: 1,
-        apply() {
-            noRotate = false;
-            skipNextBoss = true;
+        apply(game) {
+            game.noRotate = false;
+            game.skipNextBoss = true;
         }
     },
 ];
@@ -77,7 +77,8 @@ function relicCost(item) {
  * Picks 3 random unique items and resets hover state.
  * Call this from sketch.js when entering the shop.
  */
-function initShop() {
+ export function initShop() {
+    console.log("initShop ran");
     const shuffled = [...SHOP_ITEMS].sort(() => Math.random() - 0.5);
     shopOfferedItems = shuffled.slice(0, 3);
     shopHovered = -1;
@@ -98,7 +99,8 @@ function cardPosition(i) {
  * Draws the shop overlay.
  * Called from draw() in sketch.js when gameState === "shop".
  */
-function drawShop() {
+export function drawShop(recollectionUsed, recollection) {
+    console.log("drawShop ran");
     background(18);
     const cx = width / 2;
     //Header
@@ -173,17 +175,17 @@ function drawShop() {
 /**
  * Handle number-key selection in the shop.
  */
-function shopKeyPressed(k) {
+export function shopKeyPressed(k, game) {
     const idx = parseInt(k) - 1;
     if (idx >= 0 && idx < shopOfferedItems.length) {
-        applyShopItem(idx);
+        applyShopItem(idx, game);
     }
 }
  
 /**
  * Update hovered card based on mouse position.
  */
-function shopMouseMoved() {
+export function shopMouseMoved() {
     shopHovered = -1;
     shopOfferedItems.forEach((_, i) => {
         const { x, y } = cardPosition(i);
@@ -198,22 +200,22 @@ function shopMouseMoved() {
  * Handle mouse click selection.
  * Call from p5's mouseClicked() in sketch.js.
  */
-function shopMouseClicked() {
+export function shopMouseClicked(game) {
     if (shopHovered !== -1) {
-        applyShopItem(shopHovered);
+        applyShopItem(shopHovered, game);
     }
 }
  
-function applyShopItem(i) {
+export function applyShopItem(i, game) {
     const item = shopOfferedItems[i];
     const cost = relicCost(item);
-    if (recollectionUsed + cost > recollection) {
+    if (game.recollectionUsed + cost > game.recollection) {
         shopErrorUntil = millis() + 900;
         return;
     }
 
-    item.apply();
-    recollectionUsed += cost;
-    relicsHeld.push({ id: item.id, cost });
-    closeShop();
+    item.apply(game);
+    game.recollectionUsed += cost;
+    game.relicsHeld.push({ id: item.id, cost });
+    game.closeShop();
 }

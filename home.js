@@ -1,3 +1,8 @@
+console.log("home.js loaded");
+
+import { initFirebase, loadLeaderboard } from './firebase.js';
+
+
 const PARTICLE_COLORS = ['#3ddb52','#2ee8b0','#ffd060','#a070ff','#e8a020'];
 const DEFAULT_BINDS = [
   {action:'Move Left', key:'A'},
@@ -25,11 +30,12 @@ const sliders = [
   {label:'Music Volume', value:60},
   {label:'SFX Volume', value:75},
 ];
-const buttonHover = {start:0, settings:0, quit:0};
+const buttonHover = {start:0, settings:0, leaderboard:0, quit:0};
 //menu
 const MENU_BTNS = [
   {id:'start', label:'START', style:'start'},
   {id:'settings', label:'SETTINGS', style:'settings'},
+  {id:'leaderboard', label:'LEADER BOARD', style:'leaderboard'},
   {id:'quit', label:'QUIT', style:'quit'},
 ];
 const BTN_STYLES = {
@@ -44,6 +50,12 @@ const BTN_STYLES = {
     glow: 'rgba(200,128,32,',
     border: 'rgba(255,208,96,',
     text: '#fff8e8',
+  },
+  leaderboard: {
+    grad: ['#0a3a5c','#1672a8','#0d4e7a'],
+    glow: 'rgba(22,114,168,',
+    border: 'rgba(96,200,255,',
+    text: '#e8f8ff',
   },
   quit: {
     grad: ['#6a1010','#b02020','#7a1818'],
@@ -67,13 +79,17 @@ let settingsTab = 'general';
 let kbScrollY = 0;
 let dragSlider = null;
 let regions = [];
+let leaderboardOpen = false;
+let leaderboardProgress = 0;
+let leaderboardData = [];
+let leaderboardLoading = false;
 
-function preload() {
+window.preload = function () {
   logoImg = loadImage('logo.png', () => {}, () => { logoImg = null; });
   titleImg = loadImage('/assets/Relicquae.png', () => {}, () => { titleImg = null; });
 }
 
-function setup() {
+window.setup =  async function () {
   const canvas = createCanvas(windowWidth, windowHeight);
   canvas.id('bg-canvas');
   canvas.style('display', 'block');
@@ -84,29 +100,30 @@ function setup() {
   initVines();
   for (let i = 0; i < 40; i++) particles.push(resetParticle({}));
   cx = width / 2;
+  await initFirebase();
 }
 
-function windowResized() {
+window.windowResized = function () {
   resizeCanvas(windowWidth, windowHeight);
   initVines();
   cx = width / 2;
 }
 
-function draw() {
+window.draw = function () {
   regions = [];
   logoFloatTimer += 0.015;
   titleShineTimer += 0.012;
   if (modalOpen && modalProgress < 1) modalProgress = min(1, modalProgress + 0.1);
   if (!modalOpen && modalProgress > 0) modalProgress = max(0, modalProgress - 0.1);
+  if (leaderboardOpen && leaderboardProgress < 1) leaderboardProgress = min(1, leaderboardProgress + 0.1);
+  if (!leaderboardOpen && leaderboardProgress > 0) leaderboardProgress = max(0, leaderboardProgress - 0.1);
   drawBackground();
-  vines.forEach(v => {
-    growVine(v);
-    drawVine(v);
-  });
+  vines.forEach(v => { growVine(v); drawVine(v); });
   particles.forEach(p => updateParticle(p));
   drawLogoArea();
   drawMenu();
   if (modalProgress > 0.01) drawOverlay();
+  if (leaderboardProgress > 0.01) drawLeaderboardOverlay();
   updateCursor();
 }
 
@@ -669,7 +686,7 @@ function drawKeybindsPanel(x, y, w, h) {
   regions.push({id: 'reset-keys', x: resetX, y: resetY, w: resetW, h: resetH});
 }
 
-function mousePressed() {
+window.mousePressed = function () {
   for (const r of regions) {
     if (mouseX >= r.x && mouseX <= r.x + r.w &&
         mouseY >= r.y && mouseY <= r.y + r.h) {
@@ -691,18 +708,18 @@ function mousePressed() {
   }
 }
 
-function mouseDragged() {
+window.mouseDragged = function () {
   if (dragSlider === null) return;
   const s = sliders[dragSlider.index];
   const dx = mouseX - dragSlider.startX;
   s.value = constrain(dragSlider.startVal + round(dx / dragSlider.trackW * 100), 0, 100);
 }
 
-function mouseReleased() {
+window.mouseReleased = function () {
   dragSlider = null;
 }
 
-function mouseWheel(event) {
+window.mouseWheel = function (event) {
   if (modalOpen && settingsTab === 'keybinds') {
     kbScrollY = constrain(kbScrollY - event.delta * 0.4, -(binds.length * 36 - 180), 0);
     return false;
@@ -734,18 +751,21 @@ function handleRegionClick(r) {
     binds = structuredClone(DEFAULT_BINDS);
     localStorage.removeItem('rq_binds');
     cancelListen();
+  } else if (r.id === 'leaderboard') {
+    openLeaderboard();
+  } else if (r.id === 'close-leaderboard') {
+    leaderboardOpen = false;
   }
 }
 
-function keyPressed() {
+window.keyPressed = function () {
   if (keyCode === ESCAPE) {
-    if (listening) {
-      cancelListen();
-      return;
-    }
-    if (modalOpen) modalOpen = false;
+    if (listening) { cancelListen(); return; }
+    if (modalOpen) { modalOpen = false; return; }
+    if (leaderboardOpen) { leaderboardOpen = false; return; }
     return;
   }
+
   if (!listening) return;
   binds[listening.index].key = key;
   localStorage.setItem('rq_binds', JSON.stringify(binds));
@@ -771,4 +791,202 @@ function updateCursor() {
     mouseY >= r.y && mouseY <= r.y + r.h
   );
   document.body.style.cursor = onRegion ? 'pointer' : 'default';
+}
+
+async function openLeaderboard() {
+  leaderboardOpen = true;
+  leaderboardLoading = true;
+  leaderboardData = [];
+
+  await initFirebase();
+  leaderboardData = await loadLeaderboard();
+
+  console.log("leaderboardData:", leaderboardData);
+
+  leaderboardLoading = false;
+}
+
+function drawLeaderboardOverlay() {
+  const e = 1 - Math.pow(1 - leaderboardProgress, 3);
+  const popW = min(500, width * 0.94);
+  const popH = 420;
+  const popX = (width - popW) / 2;
+  const popY = (height - popH) / 2;
+
+  push();
+  fill(`rgba(2,8,3,${0.82 * e})`);
+  noStroke();
+  rect(0, 0, width, height);
+  pop();
+
+  push();
+  translate(width / 2, height / 2);
+  scale(0.94 + 0.06 * e);
+  translate(-width / 2, -height / 2 + 12 * (1 - e));
+  drawingContext.globalAlpha = e;
+  drawLeaderboardPanel(popX, popY, popW, popH);
+  pop();
+}
+
+function drawLeaderboardPanel(x, y, w, h) {
+  // background
+  push();
+  const bgGrad = drawingContext.createLinearGradient(x, y, x, y + h);
+  bgGrad.addColorStop(0, '#0a1c0c');
+  bgGrad.addColorStop(0.5, '#071408');
+  bgGrad.addColorStop(1, '#0c1e0e');
+  drawingContext.fillStyle = bgGrad;
+  drawingContext.fill(roundRectPath(x, y, w, h, 10));
+  pop();
+
+  // border
+  push();
+  noFill();
+  stroke('rgba(196, 196, 5, 0.74)');
+  strokeWeight(1);
+  rect(x, y, w, h, 10);
+  pop();
+
+  // header
+  const headerH = 55;
+  const closeX = x + w - 26;
+  const closeY = y + headerH / 2;
+  const overClose = leaderboardOpen && dist(mouseX, mouseY, closeX, closeY) < 16;
+
+  push();
+  stroke('rgba(196, 196, 5, 0.74)');
+  strokeWeight(1);
+  noFill();
+  line(x, y + headerH, x + w, y + headerH);
+  pop();
+
+  push();
+  drawingContext.shadowBlur = 14;
+  drawingContext.shadowColor = 'rgba(96,200,255,0.5)';
+  drawingContext.letterSpacing = '0.18em';
+  fill('#e8f8ff');
+  noStroke();
+  textFont("'Cinzel Decorative', serif");
+  textSize(16);
+  textStyle(BOLD);
+  textAlign(LEFT, CENTER);
+  text('Leaderboard', x + 24, y + headerH / 2);
+  pop();
+
+  push();
+  noStroke();
+  if (overClose) {
+    fill('rgba(192,40,26,0.15)');
+    circle(closeX, closeY, 28);
+  }
+  fill(overClose ? C.redBright : C.textDim);
+  textFont('sans-serif');
+  textSize(14);
+  textStyle(NORMAL);
+  textAlign(CENTER, CENTER);
+  text('X', closeX, closeY);
+  pop();
+  regions.push({id: 'close-leaderboard', x: closeX - 16, y: closeY - 16, w: 32, h: 32});
+
+  // body
+  const bodyY = y + headerH + 16;
+  const pad = 28;
+  const rowH = 48;
+
+  if (leaderboardLoading) {
+    push();
+    fill(C.textDim);
+    noStroke();
+    textFont("'Cinzel', serif");
+    textSize(11);
+    textStyle(ITALIC);
+    textAlign(CENTER, CENTER);
+    text('Loading scores…', x + w / 2, bodyY + 80);
+    pop();
+    return;
+  }
+
+  if (leaderboardData.length === 0) {
+    push();
+    fill(C.textDim);
+    noStroke();
+    textFont("'Cinzel', serif");
+    textSize(11);
+    textStyle(ITALIC);
+    textAlign(CENTER, CENTER);
+    text('No scores yet. Be the first!', x + w / 2, bodyY + 80);
+    pop();
+    return;
+  }
+
+  const rankColors = ['#ffd060', '#c0c8d0', '#c87832', C.textDim, C.textDim];
+  const rankLabels = ['#1', '#2', '#3', '#4', '#5'];
+  const rankGlows  = [
+    'rgba(255,208,96,0.18)',
+    'rgba(192,200,208,0.12)',
+    'rgba(200,120,50,0.12)',
+    'transparent',
+    'transparent',
+  ];
+
+  leaderboardData.forEach((entry, i) => {
+    const ry = bodyY + i * rowH;
+
+    if (i < 3) {
+      push();
+      fill(rankGlows[i]);
+      noStroke();
+      rect(x + pad - 8, ry, w - pad * 2 + 16, rowH - 4, 4);
+      pop();
+    }
+
+    if (i > 0) {
+      push();
+      stroke('rgba(255,255,255,0.05)');
+      strokeWeight(1);
+      noFill();
+      line(x + pad, ry, x + w - pad, ry);
+      pop();
+    }
+
+    // rank number
+    push();
+    drawingContext.shadowBlur = i < 3 ? 10 : 0;
+    drawingContext.shadowColor = rankColors[i];
+    fill(rankColors[i]);
+    noStroke();
+    drawingContext.letterSpacing = '0.1em';
+    textFont("'Cinzel', serif");
+    textSize(13);
+    textStyle(BOLD);
+    textAlign(LEFT, CENTER);
+    text(rankLabels[i], x + pad, ry + rowH / 2);
+    pop();
+
+    // name
+    push();
+    fill(C.text);
+    noStroke();
+    drawingContext.letterSpacing = '0.06em';
+    textFont("'Cinzel', serif");
+    textSize(11);
+    textStyle(BOLD);
+    textAlign(LEFT, CENTER);
+    text(entry.name ?? 'Anonymous', x + pad + 36, ry + rowH / 2);
+    pop();
+
+    // score
+    push();
+    drawingContext.shadowBlur = i < 3 ? 8 : 0;
+    drawingContext.shadowColor = rankColors[i];
+    fill(rankColors[i]);
+    noStroke();
+    drawingContext.letterSpacing = '0.04em';
+    textFont("'Cinzel', serif");
+    textSize(13);
+    textStyle(BOLD);
+    textAlign(RIGHT, CENTER);
+    text(entry.score.toLocaleString(), x + w - pad, ry + rowH / 2);
+    pop();
+  });
 }
