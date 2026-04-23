@@ -77,12 +77,10 @@ class Piece {
             [this.boxSize, -this.boxSize],
             [0, -2 * this.boxSize],
         ];
-
         for (const [offsetX, offsetY] of kicks) {
             if (!this.canPlace(nextCells, offsetX, offsetY, boardCols, boardRows, originX, originY, board)) {
                 continue;
             }
-
             this.rotation = (this.rotation + 1) % 4;
             this.x += offsetX;
             this.y += offsetY;
@@ -95,7 +93,6 @@ class Piece {
             );
             return true;
         }
-
         return false;
     }
 

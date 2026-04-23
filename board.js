@@ -75,8 +75,14 @@ let binds = [
 ];
 let keyMap = {};
 
+//relic vars
+export let sqrBonus = 0;
+export let PerfectionBonus = 0;
+export let scoreMultiBonus = 1;
+
 const HORIZONTAL_REPEAT_DELAY = 140;
 const HORIZONTAL_REPEAT_INTERVAL = 55;
+const BASE_DROP_INTERVAL = 500;
 const SOFT_DROP_INTERVAL = 45;
 const LOCK_DELAY = 450;
 const STAGE_INTRO_FADE_IN = 500;
@@ -337,6 +343,9 @@ function updateScore(cleared) {
     //score is arbitrary rn, can tune balancing and how we want score later
     linesCleared += cleared;
     score += (POINTS[cleared] || 0);
+    score += sqrBonus;
+    score += PerfectionBonus;
+    score *= scoreMultiBonus;
     if (score >= scoreRequirement) {
         updateLevel();
     }
@@ -366,7 +375,7 @@ function updateLevel() {
     beginStageIntro("shop");
     softReset();
     //drop interval decreases based on Stage (and level?)
-    dropInterval = Math.max(80, 500 - (stage - 1) * 100);
+    dropInterval = Math.max(80, BASE_DROP_INTERVAL - (stage - 1) * 100);
 }
 
 function activateBoss() {
@@ -1218,7 +1227,7 @@ function resetGame() {
     recollectionUsed = 0;
     relicsHeld = [];
     recollection = DEFAULT_RECOLLECTION;
-    dropInterval = 500;
+    dropInterval = BASE_DROP_INTERVAL;
     gameOver = false;
     paused = false;
     pauseSettingsOpen = false;
@@ -1276,7 +1285,7 @@ window.windowResized = function() {
 function closeShop() {
     gameState = "standard";
     softReset();
-    dropInterval = Math.max(80, 500 - (stage - 1) * 100);
+    dropInterval = Math.max(80, BASE_DROP_INTERVAL - (stage - 1) * 100);
 }
 
 function setBinds() {
