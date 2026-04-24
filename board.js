@@ -79,6 +79,9 @@ let keyMap = {};
 export let sqrBonus = 0;
 export let PerfectionBonus = 0;
 export let scoreMultiBonus = 1;
+export let comboLineActive = false;
+export let comboStreak = 0;
+export let comboLineBonus = 0.5;
 
 const HORIZONTAL_REPEAT_DELAY = 140;
 const HORIZONTAL_REPEAT_INTERVAL = 55;
@@ -340,12 +343,27 @@ function clearLines() {
 }
 
 function updateScore(cleared) {
-    //score is arbitrary rn, can tune balancing and how we want score later
     linesCleared += cleared;
-    score += (POINTS[cleared] || 0);
+
+    let pointsGained = POINTS[cleared] || 0;
+    //combo line check
+    if (comboLineActive) {
+        if (cleared > 0) {
+            comboStreak++;
+            const comboMultiplier = 1 + comboLineBonus * comboStreak;
+            pointsGained *= comboMultiplier;
+        } else {
+            comboStreak = 0;
+        }
+    }
+
+    //score modifiers
+    score += pointsGained;
+
     score += sqrBonus;
     score += PerfectionBonus;
     score *= scoreMultiBonus;
+
     if (score >= scoreRequirement) {
         updateLevel();
     }
@@ -1307,6 +1325,10 @@ function getPlayerName() {
   return playerName;
 }
 
+function setComboLineActive(value) {
+    comboLineActive = value;
+}
+
 async function submitFinalScore() {
   if (scoreSubmitted) return;
   scoreSubmitted = true;
@@ -1327,6 +1349,7 @@ function getShopGameState() {
         recollectionUsed,
         recollection,
         relicsHeld,
+        setComboLineActive,
         closeShop
     };
 }

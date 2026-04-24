@@ -96,4 +96,15 @@ const RELICS = [
       scoreMultiBonus += 0.05;
     },
   }),
+  new Relic({
+    id: "combo_line",
+    name: "Combo Line",
+    sprite: "assets/relics/rare_comboline.png",
+    rarity: "RARE",
+    description: "Every consecutive line clear gains +50% stacking score.",
+    ability() {
+      comboLineActive = true;
+    },
+  }),
+  
 ];
