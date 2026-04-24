@@ -16,6 +16,7 @@ let board = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
 let activePiece = null;
 let nextType = null;
 let score = 0;
+let totalScore = 0;
 let scoreRequirement = 500;
 let scoreIncrement = 250;
 let scoreFactor = 2;
@@ -580,23 +581,42 @@ function drawSidebar() {
     drawPreviewPiece(holdType, holdPreviewX, holdPreviewY);
 
     fill(255);
+
+    // GOAL
     textSize(14); text("GOAL", leftPanelX, panelY + 160);
-    textSize(22); text(scoreRequirement, leftPanelX, panelY + 180);
-    textSize(14); text("SCORE", leftPanelX, panelY + 210);
-    textSize(22); text(score, leftPanelX, panelY + 230);
-    textSize(14); text("STAGE, LEVEL", leftPanelX, panelY + 260);
-    textSize(22); text(stage + ", " + level, leftPanelX, panelY + 280);
-    textSize(14); text("HINDRANCE", leftPanelX, panelY + 310);
+    textSize(22); text(scoreRequirement, leftPanelX, panelY + 185);
+
+    // SCORE
+    textSize(14); text("SCORE", leftPanelX, panelY + 225);
+    textSize(22); text(score, leftPanelX, panelY + 250);
+
+    // TOTAL SCORE
+    textSize(14); text("TOTAL SCORE", leftPanelX, panelY + 290);
+    textSize(22); text(totalScore, leftPanelX, panelY + 315);
+
+    // STAGE / LEVEL
+    textSize(14); text("STAGE, LEVEL", leftPanelX, panelY + 355);
+    textSize(22); text(stage + ", " + level, leftPanelX, panelY + 380);
+
+    // HINDRANCE
+    textSize(14); text("HINDRANCE", leftPanelX, panelY + 420);
     textSize(18);
     fill(noRotate ? color(255, 110, 110) : color(220));
-    text(getHindranceText(), leftPanelX, panelY + 330, previewW + 24, 44);
+    text(getHindranceText(), leftPanelX, panelY + 445, previewW + 24, 44);
+
     fill(255);
-    textSize(14); text("LINES", leftPanelX, panelY + 380);
-    textSize(22); text(linesCleared, leftPanelX, panelY + 400);
-    textSize(14); text("PIECES LEFT", leftPanelX, panelY + 430);
-    textSize(22); text(pieceBag - numLockedPieces, leftPanelX, panelY + 450);
-    textSize(14); text("RECOLLECTION", leftPanelX, panelY + 480);
-    textSize(22); text(recollectionUsed + " / " + recollection, leftPanelX, panelY + 500);
+
+    // LINES
+    textSize(14); text("LINES", leftPanelX, panelY + 485);
+    textSize(22); text(linesCleared, leftPanelX, panelY + 510);
+
+    // PIECES LEFT
+    textSize(14); text("PIECES LEFT", leftPanelX, panelY + 550);
+    textSize(22); text(pieceBag - numLockedPieces, leftPanelX, panelY + 575);
+
+    // RECOLLECTION
+    textSize(14); text("RECOLLECTION", leftPanelX, panelY + 615);
+    textSize(22); text(recollectionUsed + " / " + recollection, leftPanelX, panelY + 630);
 
     textSize(14); text("NEXT", rightPanelX, panelY);
     const nextPreviewX = rightPanelX;
@@ -1314,6 +1334,7 @@ function resetGame() {
 // restarts the game, but keeps various variables. Used for progressing levels and stages.
 function softReset() {
     board = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
+    totalScore += score;
     score = 0;
     numLockedPieces = 0;
     holdType = null;
@@ -1390,7 +1411,7 @@ async function submitFinalScore() {
   scoreSubmitted = true;
 
   const playerName = getPlayerName();
-  await submitScore(playerName, score);
+  await submitScore(playerName, totalScore);
 }
 
 function getShopGameState() {
