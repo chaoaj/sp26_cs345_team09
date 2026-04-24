@@ -1,5 +1,3 @@
-console.log("home.js loaded");
-
 import { initFirebase, loadLeaderboard } from './firebase.js';
 
 

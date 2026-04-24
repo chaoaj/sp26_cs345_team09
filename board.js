@@ -1,5 +1,5 @@
 import { initFirebase, submitScore } from './firebase.js';
-import { initShop, drawShop, shopMouseMoved, shopMouseClicked, shopKeyPressed } from './shop.js';
+import { initShop, drawShop, shopMouseMoved, shopMouseClicked, shopKeyPressed, preloadRelicSprites } from './shop.js';
 const ROWS = 20;
 const COLS = 10;
 const BOX_SIZE = 32;
@@ -34,7 +34,7 @@ let pieceBag = 30;
 let numLockedPieces = 0;
 let recollection = DEFAULT_RECOLLECTION;
 let recollectionUsed = 0;
-let relicsHeld = [];
+export let relicsHeld = [];
 
 // gameState will tell the program what should be rendered and processed
 // valid states: menu, standard, boss, shop, stageIntro
@@ -142,6 +142,9 @@ window.draw = function() {
     if (gameState === "shop") drawShop(recollectionUsed, recollection);
     if (gameOver) drawGameOver();
     if (paused) drawPaused();
+}
+window.preload = function() {
+  preloadRelicSprites();
 }
 
 function beginStageIntro(nextState) {
@@ -1087,7 +1090,7 @@ window.mouseMoved = function() {
     if (gameState === "shop") shopMouseMoved();
 }
 
-window.mouseClicked = function() {
+window.mousePressed = function() {
     if (settingsModalOpen) {
         for (const r of settingsRegions) {
             if (mouseX >= r.x && mouseX <= r.x + r.w && mouseY >= r.y && mouseY <= r.y + r.h) {
