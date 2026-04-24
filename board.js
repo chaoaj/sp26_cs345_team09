@@ -78,6 +78,7 @@ let keyMap = {};
 
 //relic vars
 export let sqrBonus = 0;
+export let sqrBonusActive = false;
 export let PerfectionBonus = 0;
 export let scoreMultiBonus = 1;
 export let comboLineActive = false;
@@ -324,6 +325,7 @@ function lockPiece() {
         submitFinalScore();
         return;
     }
+    if (sqrBonusActive && activePiece.type === '2by2') addSqrBonus(2);
     activePiece = spawnPiece();
     holdUsed = false;
     lockStartedAt = 0;
@@ -1371,10 +1373,7 @@ function setBinds() {
     rebuildKeyMap();
 }
 
-
-
 //leader board stuff
-
 function getPlayerName() {
   let playerName = localStorage.getItem('rq_player_name');
 
