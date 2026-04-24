@@ -84,8 +84,10 @@ export let comboStreak = 0;
 export let comboLineBonus = 0.5;
 export let towerBuilderActive = false;
 export let towerBuilderBonus = 0.4;
+let currentPieceRotations = 0;
 export let spin2WinActive = false;
 export let spin2WinBonus = 0.02
+let lastMoveWasHardDrop = false;
 export let turboBoosterActive = false;
 export let turboBoosterBonus = 0.2;
 export let doubleHoldActive = false;
@@ -197,10 +199,14 @@ function randomPiece() {
 function spawnPiece() {
     const type = nextType;
     nextType = randomPiece();
+    //spin2win relic
+    currentPieceRotations = 0;
     return spawnPieceOfType(type);
 }
 
 function spawnPieceOfType(type) {
+    //spin2win relic
+    currentPieceRotations = 0;
     const startX = originX + Math.floor((COLS - 4) / 2) * BOX_SIZE;
     const startY = originY;
     const piece = new Piece(startX, startY, type, BOX_SIZE);
@@ -305,6 +311,10 @@ function lockPiece() {
 
     });
     updateScore(clearLines());
+    //spin2win relic
+    currentPieceRotations = 0;
+    //turbo_booster relic
+    lastMoveWasHardDrop = false;
     //increment numLockedpieces.
     numLockedPieces++;
     //check if numLockedPieces is less than the bag.
@@ -367,6 +377,18 @@ function updateScore(cleared) {
             comboStreak = 0;
         }
     }
+
+    // Turbo Booster relic
+    if (turboBoosterActive && lastMoveWasHardDrop && cleared > 0) {
+        pointsGained *= 1 + turboBoosterBonus;
+    }
+
+    // Spin 2 Win relic
+    if (spin2WinActive && cleared > 0) {
+        const spinMultiplier = 1 + currentPieceRotations * spin2WinBonus;
+        pointsGained *= spinMultiplier;
+    }
+
 
     //score modifiers
     score += pointsGained;
@@ -1190,12 +1212,18 @@ window.keyPressed = function() {
             nextSoftDrop = millis() + SOFT_DROP_INTERVAL;
             break;
         case "Rotate" :
-            if (!noRotate && activePiece.rotate(COLS, ROWS, originX, originY, board)) resetLockDelay();
-            break;
+            if (!noRotate && activePiece.rotate(COLS, ROWS, originX, originY, board)) {
+                currentPieceRotations++;
+                resetLockDelay();
+                break;
+            } 
         case "Hard Drop" :
             let dropped = 0;
             while (tryMove(activePiece, 0, BOX_SIZE)) dropped++;
             score += dropped * 2;
+            //turbo_booster relic
+            lastMoveWasHardDrop = true;
+
             lockPiece();
             break;
         case "Hold Piece" :
@@ -1374,7 +1402,17 @@ function getShopGameState() {
         recollectionUsed,
         recollection,
         relicsHeld,
+
+        sqrBonus,
+        PerfectionBonus,
+        scoreMultiBonus,
+
         setComboLineActive,
+        setTowerBuilderActive,
+        setSpin2WinActive,
+        setTurboBoosterActive,
+        setDoubleHoldActive,
+
         closeShop
     };
 }
