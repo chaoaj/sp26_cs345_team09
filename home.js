@@ -69,6 +69,7 @@ let binds = JSON.parse(localStorage.getItem('rq_binds') || 'null') || structured
 let listening = null;
 let logoImg = null;
 let titleImg = null;
+let bgImage = null;
 let logoFloatTimer = 0;
 let titleShineTimer = 0;
 let modalOpen = false;
@@ -85,6 +86,7 @@ let leaderboardLoading = false;
 window.preload = function () {
   logoImg = loadImage('logo.png', () => {}, () => { logoImg = null; });
   titleImg = loadImage('/assets/Relicquae.png', () => {}, () => { titleImg = null; });
+  bgImage = loadImage('/assets/background.png', () => {}, () => { bgImage = null; });
 }
 
 window.setup =  async function () {
@@ -127,7 +129,9 @@ window.draw = function () {
 }
 
 function drawBackground() {
+  console.log(windowWidth, ' ' ,windowHeight);
   background(C.bg);
+  background(bgImage);
   push();
   const g = drawingContext.createRadialGradient(width / 2, height, 0, width / 2, height, height * 1.1);
   g.addColorStop(0, 'rgba(14,48,18,0.9)');
