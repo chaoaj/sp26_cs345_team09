@@ -1,6 +1,3 @@
-import {sqrBonus, PerfectionBonus, scoreMultiBonus, setSpin2WinActive,
-   setComboLineActive, setTowerBuilderActive,
-   setTurboBoosterActive, setDoubleHoldActive} from "./board.js";
 export const RARITY = Object.freeze({
   COMMON: {label: "Common", color: "#b0b0b0", spawnWeight: 60},
   RARE: {label: "Rare", color: "#2196f3", spawnWeight: 25},
@@ -32,10 +29,7 @@ class Relic {
     this.description = description;
     this.ability = ability;
     this.spawnChance = +(this.rarity.spawnWeight / TOTAL_WEIGHT * 100).toFixed(2);
-  }
-
-  activate(game) {
-    this.ability(game);
+    this.active = false;
   }
 
   static rollRandom(pool) {
@@ -66,7 +60,7 @@ export const RELICS = [
     rarity: "COMMON",
     description: "essence of the ice age.",
     ability(game) {
-      game.dropInterval *= 0.8;
+      game.slowed = this.active;
     },
   }),
 
@@ -77,7 +71,7 @@ export const RELICS = [
     rarity: "COMMON",
     description: "every placed square increases this score bonus by 2",
     ability(game) {
-      game.addSqrBonus(2);
+      game.sqrBonusActive = this.active;
     },
   }),
 
@@ -88,7 +82,7 @@ export const RELICS = [
     rarity: "COMMON",
     description: "every tetris increases this score bonus by 20",
     ability(game) {
-      game.PerfectionBonus += 20;
+      game.perfectionActive = this.active;
     },
   }),
 
@@ -99,9 +93,10 @@ export const RELICS = [
     rarity: "COMMON",
     description: "Increases score by +5% per line cleared",
     ability(game) {
-      game.scoreMultiBonus += 0.05;
+      game.scoreMultiActive = this.active;
     },
   }),
+
   new Relic({
     id: "combo_line",
     name: "Combo Line",
@@ -109,10 +104,10 @@ export const RELICS = [
     rarity: "RARE",
     description: "Every consecutive line clear gains +50% stacking score.",
     ability(game) {
-      game.setComboLineActive(true);
+      game.comboLineActive = this.active;
     },
   }),
-
+  //not implemented
   new Relic({
     id: "tower_builder",
     name: "Tower Builder",
@@ -120,9 +115,10 @@ export const RELICS = [
     rarity: "RARE",
     description: "If the tower is above 60% of the board lines cleared gain 40% score.",
     ability(game) {
-      game.setTowerBuilderActive(true);
+      game.towerBuilderActive = this.active;
     },
   }),
+
   new Relic({
     id: "spin_2_win",
     name: "Spin 2 Win",
@@ -130,7 +126,7 @@ export const RELICS = [
     rarity: "RARE",
     description: "Gain +2% score per full rotation on the piece that cleared the line.",
     ability(game) {
-      game.setSpin2WinActive(true);
+      game.spin2WinActive = this.active;
     },
   }),
   new Relic({
@@ -140,9 +136,10 @@ export const RELICS = [
     rarity: "EPIC",
     description: "Hard dropping a piece\nincreases score by +30%.",
     ability(game) {
-      game.setTurboBoosterActive(true);
+      game.turboBoosterActive = this.active;
     },
   }),
+  //not implemented
   new Relic({
     id: "holder",
     name: "Holder",
@@ -150,8 +147,18 @@ export const RELICS = [
     rarity: "EPIC",
     description: "Allows holding an extra piece.",
     ability(game) {
-      game.setDoubleHoldActive(true);
+      game.doubleHoldActive = this.active;
     },
   }),
-  
+  new Relic({
+    id: "tester",
+    name: "Tester",
+    sprite: "assets/relics/tester.png",
+    rarity: "COMMON",
+    description: "Test Active",
+    ability(game) {
+      console.log("e");
+      game.scoreAdd = 50;
+    },
+  }),
 ];
