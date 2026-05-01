@@ -665,7 +665,7 @@ function drawSidebar() {
 
     // TOTAL SCORE
     textSize(14); text("TOTAL SCORE", leftPanelX, panelY + 290);
-    textSize(22); text(totalScore, leftPanelX, panelY + 315);
+    textSize(22); text(Math.trunc(totalScore), leftPanelX, panelY + 315);
 
     // STAGE / LEVEL
     textSize(14); text("STAGE, LEVEL", leftPanelX, panelY + 355);
@@ -1404,6 +1404,7 @@ function resetGame() {
     pauseSettingsOpen = false;
     settingsModalOpen = false;
     settingsModalProgress = 0;
+    totalScore = 0;
     settingsTab = "general";
     kbScrollY = 0;
     dragSlider = null;
