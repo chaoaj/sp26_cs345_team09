@@ -119,7 +119,6 @@ function relicToShopItem(relic) {
     weight: relic.rarity.spawnWeight,
     isRelic: true,
     relicRef: relic,
-    apply(game) { relic.activate(game); },
   };
 }
 
@@ -275,15 +274,13 @@ export function applyShopItem(i, game) {
     return;
   }
   try {
-    item.apply(game);
+    if(!item.isRelic)
+      item.apply(game);
   } catch (e) {
     console.error(`Shop item "${item.id}" apply() threw:`, e);
   }
-  game.recollectionUsed += cost;
   if (item.isRelic) {
     game.relicsHeld.push(item.relicRef);
-  } else {
-    game.relicsHeld.push({ id: item.id, cost });
   }
   game.closeShop();
 }
