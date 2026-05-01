@@ -1,5 +1,6 @@
 import { initFirebase, submitScore } from './firebase.js';
 import { initShop, drawShop, shopMouseMoved, shopMouseClicked, shopKeyPressed, preloadRelicSprites } from './shop.js';
+import {BOSSES} from './boss.js';
 import { RelicMenu } from './relicMenu.js'
 
 const ROWS = 20;
@@ -9,9 +10,9 @@ const BOARD_W = COLS * BOX_SIZE;
 const BOARD_H = ROWS * BOX_SIZE;
 const PIECE_TYPES = ["4Line", "L", "BackL", "T", "S", "Z", "2by2"];
 const POINTS = [0, 100, 300, 500, 800];
-const BOSSES = ["rotate"];
 const SPRITES = {};
 const DEFAULT_RECOLLECTION = 5;
+const LIMITED_VISION_RADIUS = 200;
 
 let originX, originY;
 let board = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
@@ -32,11 +33,15 @@ let lastDrop = 0;
 let holdType = null;
 let holdUsed = false;
 let noRotate = false;
+let costlyRotate = false;
+let stealthyPieces = false;
+let limitedVision = false;
 let skipNextBoss = false;
 let pieceBag = 30;
 let numLockedPieces = 0;
 let recollection = DEFAULT_RECOLLECTION;
 let recollectionUsed = 0;
+let currentBoss = false;
 export let relicsHeld = [];
 
 // gameState will tell the program what should be rendered and processed
@@ -168,8 +173,13 @@ window.draw = function() {
     }
     if (gameState === "standard") {
         drawBoard();
-        drawGhost();
+        if (!stealthyPieces) {
+            drawGhost();
+        }
         drawActivePiece();
+        if (limitedVision) {
+            drawLimitedVision();
+        }
         drawSidebar();
         if (!gameOver && !paused) {
             handleHeldInput();
@@ -449,7 +459,7 @@ function updateLevel() {
     }
 
     if (level === 3) {
-        noRotate = false;
+        deactivateBoss();
         level = 1;
         pieceBag += 15;
         scoreRequirement *= scoreFactor;
@@ -457,6 +467,7 @@ function updateLevel() {
         scoreFactor *= 2;
         recollection++;
         stage++
+        dropInterval = Math.max(80, BASE_DROP_INTERVAL - (stage - 1) * 100);
     } else {
         level++;
         scoreRequirement += scoreIncrement;
@@ -472,21 +483,23 @@ function updateLevel() {
 function activateBoss() {
     if (skipNextBoss) {
         skipNextBoss = false;
+        currentBoss = false;
         return;
     }
-    let boss = BOSSES[Math.floor(Math.random() * BOSSES.length)];
-    switch (boss) {
-        case "rotate" : 
-            noRotate = true;
-            break;
-    }
+    currentBoss = BOSSES[Math.floor(Math.random() * BOSSES.length)];
+    currentBoss.activate();
+}
+    function deactivateBoss() {
+        if (currentBoss) {
+            currentBoss.deactivate();
+            currentBoss = false;
+        }
 }
 
 function getHindranceText() {
-    const hindrances = [];
-    if (noRotate) hindrances.push("No Rotates");
-    if (hindrances.length === 0) return "None";
-    return hindrances.join(", ");
+    if (currentBoss) {
+        return currentBoss.name;
+    }
 }
 
 
@@ -640,7 +653,7 @@ function drawSidebar() {
     // HINDRANCE
     textSize(14); text("HINDRANCE", leftPanelX, panelY + 420);
     textSize(18);
-    fill(noRotate ? color(255, 110, 110) : color(220));
+    fill(currentBoss ? color(255, 110, 110) : color(220));
     text(getHindranceText(), leftPanelX, panelY + 445, previewW + 24, 44);
 
     fill(255);
@@ -1274,6 +1287,9 @@ window.keyPressed = function() {
             break;
         case "Rotate" :
             if (!noRotate && activePiece.rotate(COLS, ROWS, originX, originY, board)) {
+                if (costlyRotate) {
+                    score -= 10;
+                }
                 currentPieceRotations++;
                 resetLockDelay();
             }
@@ -1356,6 +1372,10 @@ function resetGame() {
     rightHeld = false;
     downHeld = false;
     noRotate = false;
+    costlyRotate = false;
+    stealthyPieces = false;
+    limitedVision = false;
+    currentBoss = false;
     lastHorizontalDir = 0;
     nextHorizontalMove = 0;
     nextSoftDrop = 0;
@@ -1435,6 +1455,24 @@ function addSqrBonus(amount) {
 function setTest() {
     scoreAdd = 50;
 }
+export function setNoRotate(value) {
+    noRotate = value;
+}
+export function setDropInterval(value) {
+    dropInterval *= value;
+}
+export function setScoreRequirement(value) {
+    scoreRequirement *= value;
+}
+export function setCostlyRotate(value) {
+    costlyRotate = value;
+}
+export function setStealthyPieces(value) {
+    stealthyPieces = value;
+}
+export function setLimitedVision(value) {
+    limitedVision = value;
+}
 
 async function submitFinalScore() {
   if (scoreSubmitted) return;
@@ -1464,4 +1502,35 @@ function getShopGameState() {
 
         closeShop
     };
+}
+function drawLimitedVision() {
+    if (!activePiece) return;
+
+    let cx = 0, cy = 0;
+    for (const b of activePiece.boxes) {
+        cx += b.x + b.size / 2;
+        cy += b.y + b.size / 2;
+    }
+    cx /= activePiece.boxes.length;
+    cy /= activePiece.boxes.length;
+
+    const ctx = drawingContext;
+
+    push();
+
+    // create radial gradient "flashlight"
+    const gradient = ctx.createRadialGradient(
+        cx, cy, 0,
+        cx, cy, LIMITED_VISION_RADIUS
+    );
+
+    // center = fully transparent
+    gradient.addColorStop(0, 'rgba(0,0,0,0)');
+    // edge = full fog
+    gradient.addColorStop(1, 'rgba(0,0,0,1)');
+
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, width, height);
+
+    pop();
 }
