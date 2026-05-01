@@ -1,7 +1,7 @@
 import { initFirebase, submitScore } from './firebase.js';
 import { initShop, drawShop, shopMouseMoved, shopMouseClicked, shopKeyPressed, preloadRelicSprites } from './shop.js';
 import {BOSSES} from './boss.js';
-import { RelicMenu } from './relicMenu.js'
+import { RelicMenu } from './Relicmenu.js'
 
 const ROWS = 20;
 const COLS = 10;
@@ -154,16 +154,36 @@ window.setup = async function() {
     activePiece = spawnPiece();
     lastDrop = millis();
     beginStageIntro("standard");
-    relicMenu = new RelicMenu(relicsHeld, recollection);
-    relicMenu.onRelicChanged = (_r) => {
+    relicMenu = new RelicMenu(relicsHeld, recollection, (_r) => {
+        console.log("e");
         applyRelics();
-    };
+    });
 }
 
 function applyRelics() {
-    relics.forEach(relic => {
+    game.sqrBonusActive = false;
+    game.perfectionActive = false;
+    game.scoreMultiActive = false;
+    game.comboLineActive = false;
+    game.towerBuilderActive = false;
+    game.spin2WinActive = false;
+    game.turboBoosterActive = false;
+    game.doubleHoldActive = false;
+    game.scoreAdd = 0;
+
+    relicsHeld.forEach(relic => {
         relic.ability(game);
     });
+    // Sync back
+    sqrBonusActive = game.sqrBonusActive;
+    perfectionActive = game.perfectionActive;
+    scoreMultiActive = game.scoreMultiActive;
+    comboLineActive = game.comboLineActive;
+    towerBuilderActive = game.towerBuilderActive;
+    spin2WinActive = game.spin2WinActive;
+    turboBoosterActive = game.turboBoosterActive;
+    doubleHoldActive = game.doubleHoldActive;
+    scoreAdd = game.scoreAdd;
 }
 window.draw = function() {
     background(30);
@@ -439,6 +459,7 @@ function updateScore(cleared) {
     }
 
     //test
+    console.log(scoreAdd);
     score += scoreAdd;
     //score modifiers
     score += pointsGained;
@@ -1386,7 +1407,10 @@ function resetGame() {
     settingsTab = "general";
     kbScrollY = 0;
     dragSlider = null;
-    relicMenu = new RelicMenu(relicsHeld, recollection);
+    relicMenu = new RelicMenu(relicsHeld, recollection, (_r) => {
+        console.log("e");
+        applyRelics();
+    });
     cancelSettingsListen();
     nextType = randomPiece();
     activePiece  = spawnPiece();
@@ -1450,10 +1474,6 @@ function getPlayerName() {
 //setters
 function addSqrBonus(amount) {
     sqrBonus += amount;
-}
-
-function setTest() {
-    scoreAdd = 50;
 }
 export function setNoRotate(value) {
     noRotate = value;

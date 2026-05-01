@@ -157,6 +157,7 @@ export const RELICS = [
     rarity: "COMMON",
     description: "Test Active",
     ability(game) {
+      console.log("e");
       game.scoreAdd = 50;
     },
   }),

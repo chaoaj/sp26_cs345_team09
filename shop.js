@@ -134,6 +134,7 @@ export function initShop() {
   const relicPool = RELICS.map(relicToShopItem);
   shopOpenedAt = millis();
   shopOfferedItems = weightedPickN([...shopPool, ...relicPool], 3);
+  // shopOfferedItems = weightedPickN([...shopPool, ...relicPool], 3);
   shopHovered = -1;
   shopErrorUntil = 0;
 }
