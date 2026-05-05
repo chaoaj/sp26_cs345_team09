@@ -82,6 +82,7 @@ let leaderboardOpen = false;
 let leaderboardProgress = 0;
 let leaderboardData = [];
 let leaderboardLoading = false;
+let leaderboardScrollY = 0;
 
 window.preload = function () {
   logoImg = loadImage('assets/logo.png', () => {}, () => { logoImg = null; });
@@ -725,6 +726,17 @@ window.mouseReleased = function () {
 }
 
 window.mouseWheel = function (event) {
+
+    if (leaderboardOpen) {
+    const maxScroll = max(0, leaderboardData.length * 48 - 300);
+    leaderboardScrollY = constrain(
+      leaderboardScrollY - event.delta * 0.4,
+      -maxScroll,
+      0
+    );
+    return false;
+  }
+
   if (modalOpen && settingsTab === 'keybinds') {
     kbScrollY = constrain(kbScrollY - event.delta * 0.4, -(binds.length * 36 - 180), 0);
     return false;
@@ -802,6 +814,7 @@ async function openLeaderboard() {
   leaderboardOpen = true;
   leaderboardLoading = true;
   leaderboardData = [];
+  leaderboardScrollY = 0;
 
   await initFirebase();
   leaderboardData = await loadLeaderboard();
@@ -924,18 +937,26 @@ function drawLeaderboardPanel(x, y, w, h) {
     return;
   }
 
-  const rankColors = ['#ffd060', '#c0c8d0', '#c87832', C.textDim, C.textDim];
-  const rankLabels = ['#1', '#2', '#3', '#4', '#5'];
-  const rankGlows  = [
-    'rgba(255,208,96,0.18)',
-    'rgba(192,200,208,0.12)',
-    'rgba(200,120,50,0.12)',
-    'transparent',
-    'transparent',
-  ];
+const rankColors = Array.from({ length: 15 }, (_, i) =>
+  i === 0 ? '#ffd060' :
+  i === 1 ? '#c0c8d0' :
+  i === 2 ? '#c87832' :
+  C.textDim
+);
+
+const rankLabels = Array.from({ length: 15 }, (_, i) => `#${i + 1}`);
+
+const rankGlows = Array.from({ length: 15 }, (_, i) =>
+  i === 0 ? 'rgba(255,208,96,0.18)' :
+  i === 1 ? 'rgba(192,200,208,0.12)' :
+  i === 2 ? 'rgba(200,120,50,0.12)' :
+  'transparent'
+);
 
   leaderboardData.forEach((entry, i) => {
-    const ry = bodyY + i * rowH;
+    const ry = bodyY + i * rowH + leaderboardScrollY;
+
+  if (ry + rowH < bodyY || ry > y + h - 20) return;
 
     if (i < 3) {
       push();

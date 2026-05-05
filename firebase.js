@@ -47,7 +47,7 @@ export async function loadLeaderboard() {
     const leaderboardQuery = query(
       ref(db, "scores"),
       orderByChild("score"),
-      limitToLast(5)
+      limitToLast(15)
     );
 
     const snapshot = await get(leaderboardQuery);
