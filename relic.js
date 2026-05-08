@@ -54,7 +54,7 @@ export const RELICS = [
     name: "Slow Down",
     sprite: "assets/relics/common_slowdown.png",
     rarity: "COMMON",
-    description: "Slows the speed of pieces falling by 25%",
+    description: "Slows the speed of pieces falling by 25%.",
     ability(game) {
       game.slowed = this.active;
     },
@@ -65,7 +65,7 @@ export const RELICS = [
     name: "Square squared",
     sprite: "assets/relics/common_squaresquared.png",
     rarity: "COMMON",
-    description: "Each square piece placed grants +2 more bonus points than the last",
+    description: "Each square piece placed grants +2 more bonus points than the last.",
     ability(game) {
       game.sqrBonusActive = this.active;
     },
@@ -87,7 +87,7 @@ export const RELICS = [
     name: "Score Multi",
     sprite: "assets/relics/common_scoremulti.png",
     rarity: "COMMON",
-    description: "Increases score by +5% per line cleared",
+    description: "Increases score by +5% per line cleared.",
     ability(game) {
       game.scoreMultiActive = this.active;
     },
@@ -97,7 +97,7 @@ export const RELICS = [
       name: "Cleaner",
       sprite: "assets/relics/common_cleaner.png",
       rarity: "COMMON",
-      description: "Performing a line clear that empties the board increases score gained by +100%",
+      description: "Performing a line clear that empties the board increases score gained by +100%.",
       ability(game) {
         game.cleanerActive = this.active;
       },
@@ -156,24 +156,23 @@ export const RELICS = [
     },
   }),
   new Relic({
-    id: "tester",
-    name: "Tester",
-    sprite: "assets/relics/tester.png",
-    rarity: "COMMON",
-    description: "Test Active",
+    id: "extra_firepower",
+    name: "Extra Firepower",
+    sprite: "assets/relics/epic_extrafirepower.png",
+    rarity: "EPIC",
+    description: "Clearing 4 lines at once clears the line above it as well.",
     ability(game) {
-      console.log("e");
-      game.scoreAdd = 50;
+      game.extraFirepowerActive = this.active;
     },
   }),
   new Relic({
-    id: "extra_firepower",
-    name: "Extra Firepower",
-    sprite: "assets/relics/epic_extrfirepower.png",
+    id: "stack_master",
+    name: "Stack Master",
+    sprite: "assets/relics/epic_stackmaster.png",
     rarity: "EPIC",
-    description: "Clearing 4 lines at once clears the line above it as well",
+    description: "Grants +0.5% score per tile above the half way point of the board.",
     ability(game) {
-      game.extraFirepowerActive = this.active;
+      game.stackMasterActive = this.active;
     },
   }),
   new Relic({
@@ -181,7 +180,7 @@ export const RELICS = [
     name: "Bubble Up",
     sprite: "assets/relics/legendary_bubbleup-Sheet-export.png",
     rarity: "LEGENDARY",
-    description: "Clearing 2+ lines causes consecutive lines with 9 tiles to clear as well (up to additional lines)",
+    description: "Clearing 2+ lines causes consecutive lines with 9 tiles to clear as well (up to 2 additional lines).",
     ability(game) {
       game.bubbleUpActive = this.active;
     },
@@ -191,7 +190,7 @@ export const RELICS = [
     name: "Let's Go Gambling!",
     sprite: "assets/relics/legendary_letsgogambling-Sheet-export.png",
     rarity: "LEGENDARY",
-    description: "Getting 3 of the same piece in a row multiplies your score by 1.2x",
+    description: "Getting 3 of the same piece in a row multiplies your score by 1.2x.",
     ability(game) {
       game.letsGoGamblingActive = this.active;
     },
@@ -201,7 +200,7 @@ export const RELICS = [
     name: "Duplicator",
     sprite: "assets/relics/unique_duplicator-Sheet-export.png",
     rarity: "UNIQUE",
-    description: "When used, duplicates the current piece to held item without consuming it",
+    description: "When used, duplicates the current piece to held item without consuming it.",
     ability(game) {
       game.duplicatorActive = this.active;
     },
@@ -211,7 +210,7 @@ export const RELICS = [
     name: "Thermonuclear",
     sprite: "assets/relics/unique_thermonuclear-Sheet-export.png",
     rarity: "UNIQUE",
-    description: "When used, activates a nuke that clears the bottom 3 rows of the board but grants no score",
+    description: "When used, activates a nuke that clears the bottom 3 rows of the board but grants no score.",
     ability(game) {
       game.thermonuclearActive = this.active;
     },

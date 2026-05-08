@@ -107,6 +107,8 @@ let turboBoosterBonus = 0.3;
 let scoreAdd = 0;
 let towerBuilderActive = false;
 let towerBuilderBonus = 0.3;
+let stackMasterActive = false;
+let stackMasterBonus = 1;
 let extraFirepowerActive = false;
 let bubbleUpActive = false;
 let letsGoGamblingActive = false;
@@ -142,6 +144,7 @@ const game = {
     cleanerActive,
     comboLineActive,
     towerBuilderActive,
+    stackMasterActive,
     extraFirepowerActive,
     spin2WinActive,
     turboBoosterActive,
@@ -182,6 +185,7 @@ function applyRelics() {
     game.comboLineActive = false;
     game.cleanerActive = false;
     game.towerBuilderActive = false;
+    game.stackMasterActive = false;
     game.bubbleUpActive = false;
     game.letsGoGamblingActive = false;
     game.thermonuclearActive = false;
@@ -201,6 +205,7 @@ function applyRelics() {
     scoreMultiActive = game.scoreMultiActive;
     comboLineActive = game.comboLineActive;
     towerBuilderActive = game.towerBuilderActive;
+    stackMasterActive = game.stackMasterActive;
     bubbleUpActive = game.bubbleUpActive;
     letsGoGamblingActive = game.letsGoGamblingActive;
     thermonuclearActive = game.thermonuclearActive;
@@ -537,6 +542,15 @@ function updateScore(cleared) {
         pointsGained *= 1 + towerBuilderBonus;
     }
 
+    // Stack Master relic
+    if (stackMasterActive) {
+        const halfRow = Math.floor(ROWS / 2);
+        const tilesAboveHalf = board.slice(0, halfRow).reduce((count, row) => {
+            return count + row.filter(cell => cell !== null).length;
+        }, 0);
+        pointsGained *= stackMasterBonus + (0.005 * tilesAboveHalf);
+    }
+    
     // Turbo Booster relic
     if (turboBoosterActive && lastMoveWasHardDrop && cleared > 0) {
         pointsGained *= 1 + turboBoosterBonus;
