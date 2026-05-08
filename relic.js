@@ -25,7 +25,6 @@ class Relic {
     this.rarityKey = rarity;
     this.description = description;
     this.ability = ability;
-    this.spawnChance = +(this.rarity.spawnWeight / TOTAL_WEIGHT * 100).toFixed(2);
     this.active = false;
   }
 
@@ -93,7 +92,16 @@ export const RELICS = [
       game.scoreMultiActive = this.active;
     },
   }),
-
+  new Relic({
+      id: "cleaner",
+      name: "Cleaner",
+      sprite: "assets/relics/common_cleaner.png",
+      rarity: "COMMON",
+      description: "Performing a line clear that empties the board increases score gained by +100%",
+      ability(game) {
+        game.cleanerActive = this.active;
+      },
+    }),
   new Relic({
     id: "combo_line",
     name: "Combo Line",
@@ -110,7 +118,7 @@ export const RELICS = [
     name: "Tower Builder",
     sprite: "assets/relics/rare_towerbuilder.png",
     rarity: "RARE",
-    description: "If the tower is above 60% of the board lines cleared gain 40% score.",
+    description: "If the tower is above 60% of the board lines cleared grant +30% score.",
     ability(game) {
       game.towerBuilderActive = this.active;
     },
@@ -121,7 +129,7 @@ export const RELICS = [
     name: "Spin 2 Win",
     sprite: "assets/relics/rare_spin2win.png",
     rarity: "RARE",
-    description: "Gain +2% score per full rotation on the piece that cleared the line.",
+    description: "Gain +2% score per full rotation of the piece that clears the line.",
     ability(game) {
       game.spin2WinActive = this.active;
     },
@@ -158,4 +166,55 @@ export const RELICS = [
       game.scoreAdd = 50;
     },
   }),
+  new Relic({
+    id: "extra_firepower",
+    name: "Extra Firepower",
+    sprite: "assets/relics/epic_extrfirepower.png",
+    rarity: "EPIC",
+    description: "Clearing 4 lines at once clears the line above it as well",
+    ability(game) {
+      game.extraFirepowerActive = this.active;
+    },
+  }),
+  new Relic({
+    id: "bubble_up",
+    name: "Bubble Up",
+    sprite: "assets/relics/legendary_bubbleup-Sheet-export.png",
+    rarity: "LEGENDARY",
+    description: "Clearing 2+ lines causes consecutive lines with 9 tiles to clear as well (up to additional lines)",
+    ability(game) {
+      game.bubbleUpActive = this.active;
+    },
+  }),
+  new Relic({
+    id: "lets_go_gambling",
+    name: "Let's Go Gambling!",
+    sprite: "assets/relics/legendary_letsgogambling-Sheet-export.png",
+    rarity: "LEGENDARY",
+    description: "Getting 3 of the same piece in a row multiplies your score by 1.2x",
+    ability(game) {
+      game.letsGoGamblingActive = this.active;
+    },
+  }),
+  new Relic({
+    id: "duplicator",
+    name: "Duplicator",
+    sprite: "assets/relics/unique_duplicator-Sheet-export.png",
+    rarity: "UNIQUE",
+    description: "When used, duplicates the current piece to held item without consuming it",
+    ability(game) {
+      game.duplicatorActive = this.active;
+    },
+  }),
+  new Relic({
+    id: "thermonuclear",
+    name: "Thermonuclear",
+    sprite: "assets/relics/unique_thermonuclear-Sheet-export.png",
+    rarity: "UNIQUE",
+    description: "When used, activates a nuke that clears the bottom 3 rows of the board but grants no score",
+    ability(game) {
+      game.thermonuclearActive = this.active;
+    },
+  }),
+  
 ];

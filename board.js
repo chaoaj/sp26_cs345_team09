@@ -9,7 +9,7 @@ const BOX_SIZE = 32;
 const BOARD_W = COLS * BOX_SIZE;
 const BOARD_H = ROWS * BOX_SIZE;
 const PIECE_TYPES = ["4Line", "L", "BackL", "T", "S", "Z", "2by2"];
-const POINTS = [0, 100, 300, 500, 800];
+const POINTS = [0, 100, 300, 500, 700, 900, 1200, 1500];
 const SPRITES = {};
 const DEFAULT_RECOLLECTION = 5;
 const LIMITED_VISION_RADIUS = 200;
@@ -38,6 +38,7 @@ let costlyRotate = false;
 let stealthyPieces = false;
 let limitedVision = false;
 let skipNextBoss = false;
+let numSamePiece = 1;
 let pieceBag = 30;
 let numLockedPieces = 0;
 let recollection = DEFAULT_RECOLLECTION;
@@ -93,6 +94,8 @@ let rockBottomBonus = .15;
 let rockBottomActive = false;
 let scoreMultiActive = false;
 let scoreMultiBonus = 1;
+let cleanerActive = false;
+let cleanerBonus = 2
 let comboLineActive = false;
 let comboStreak = 0;
 let comboLineBonus = 0.5;
@@ -102,9 +105,15 @@ let turboBoosterActive = false;
 let lastMoveWasHardDrop = false;
 let turboBoosterBonus = 0.3;
 let scoreAdd = 0;
-//not implemented
 let towerBuilderActive = false;
-let towerBuilderBonus = 0.4;
+let towerBuilderBonus = 0.3;
+let extraFirepowerActive = false;
+let bubbleUpActive = false;
+let letsGoGamblingActive = false;
+let letsGoGamblingBonus = 0.2;
+let thermonuclearActive = false;
+let duplicatorActive = false;
+//not implemented
 let doubleHoldActive = false;
 // til here
 let currentPieceRotations = 0;
@@ -126,8 +135,14 @@ const game = {
     slowed,
     rockBottomActive,
     scoreMultiActive,
+    bubbleUpActive,
+    letsGoGamblingActive,
+    thermonuclearActive,
+    duplicatorActive,
+    cleanerActive,
     comboLineActive,
     towerBuilderActive,
+    extraFirepowerActive,
     spin2WinActive,
     turboBoosterActive,
     doubleHoldActive,
@@ -165,7 +180,13 @@ function applyRelics() {
     game.rockBottomActive = false;
     game.scoreMultiActive = false;
     game.comboLineActive = false;
+    game.cleanerActive = false;
     game.towerBuilderActive = false;
+    game.bubbleUpActive = false;
+    game.letsGoGamblingActive = false;
+    game.thermonuclearActive = false;
+    game.duplicatorActive = false;
+    game.extraFirepowerActive = false;
     game.spin2WinActive = false;
     game.turboBoosterActive = false;
     game.doubleHoldActive = false;
@@ -180,6 +201,12 @@ function applyRelics() {
     scoreMultiActive = game.scoreMultiActive;
     comboLineActive = game.comboLineActive;
     towerBuilderActive = game.towerBuilderActive;
+    bubbleUpActive = game.bubbleUpActive;
+    letsGoGamblingActive = game.letsGoGamblingActive;
+    thermonuclearActive = game.thermonuclearActive;
+    duplicatorActive = game.duplicatorActive;
+    extraFirepowerActive = game.extraFirepowerActive;
+    cleanerActive = game.cleanerActive;
     spin2WinActive = game.spin2WinActive;
     turboBoosterActive = game.turboBoosterActive;
     doubleHoldActive = game.doubleHoldActive;
@@ -265,6 +292,18 @@ function randomPiece() {
 function spawnPiece() {
     const type = nextType;
     nextType = randomPiece();
+    //lets go gambling relic
+    if (letsGoGamblingActive) {
+        if (type === nextType) {
+            numSamePiece++;
+        }
+        else {
+            numSamePiece = 1;
+        }
+        if (numSamePiece === 3) {
+            score *= 1 + letsGoGamblingBonus;
+        }
+    }
     //spin2win relic
     currentPieceRotations = 0;
     return spawnPieceOfType(type);
@@ -441,34 +480,57 @@ function holdPiece() {
 
 function clearLines() {
     let cleared = 0;
+    let topClearedRow = ROWS; // tracks the highest row index that was cleared
+
+    // Step 1: Clear full lines
     for (let r = ROWS - 1; r >= 0; r--) {
         if (board[r].every(cell => cell !== null)) {
-            //removes full row
             board.splice(r, 1);
-            //adds empty row to top
             board.unshift(Array(COLS).fill(null));
             cleared++;
             r++;
-            //scoreMultiBonus increment
-            if(scoreMultiActive) scoreMultiBonus += 0.05;
+            if (scoreMultiActive) scoreMultiBonus += 0.05;
+            if (r < topClearedRow) topClearedRow = r;
         }
     }
+
+    if (cleared === 0) return 0;
+
+    // Step 2: Extra Firepower — clear one extra line above on tetris
+    if (extraFirepowerActive && cleared === 4) {
+        const targetRow = topClearedRow - 1;
+        if (targetRow >= 0) {
+            board.splice(targetRow, 1);
+            board.unshift(Array(COLS).fill(null));
+            topClearedRow = targetRow;
+        }
+        cleared += 1; // Count the extra cleared line for scoring
+    }
+
+    // Step 3: Bubble Up — clear up to 2 consecutive 9-tile lines above
+    if (bubbleUpActive && cleared >= 2) {
+        let bubbleCleared = 0;
+        for (let r = topClearedRow - 1; r >= 0 && bubbleCleared < 2; r--) {
+            if (board[r].filter(cell => cell !== null).length === 9) {
+                board.splice(r, 1);
+                board.unshift(Array(COLS).fill(null));
+                bubbleCleared++;
+            } else {
+                break;
+            }
+        }
+        cleared += bubbleCleared;
+    }
+
     return cleared;
 }
 
 function updateScore(cleared) {
     linesCleared += cleared;
     let pointsGained = POINTS[cleared] || 0;
-    //combo line check
-    if (comboLineActive) {
-        if (cleared > 0) {
-            comboStreak++;
-            const comboMultiplier = 1 + comboLineBonus * comboStreak;
-            pointsGained *= comboMultiplier;
-        } else {
-            comboStreak = 0;
-        }
-    }
+
+    // Sqr squared relic
+    if(sqrBonusActive) pointsGained += sqrBonus; 
 
     // Tower Builder relic
     if (towerBuilderActive && cleared > 0 && isTowerAbove60Percent()) {
@@ -486,14 +548,29 @@ function updateScore(cleared) {
         pointsGained *= spinMultiplier;
     }
 
+    // Cleaner Relic
+    if (cleanerActive && cleared > 0 && board.every(row => row.every(cell => cell === null))) {
+        pointsGained *= cleanerBonus;
+    }
+
+    //combo line check
+    if (comboLineActive) {
+        if (cleared > 0) {
+            comboStreak++;
+            const comboMultiplier = 1 + comboLineBonus * comboStreak;
+            pointsGained *= comboMultiplier;
+        } else {
+            comboStreak = 0;
+        }
+    }
+
     //test
     console.log(scoreAdd);
     score += scoreAdd;
-    //score modifiers
+    //score modifiers 
+    if(rockBottomActive && isTowerBelow30Percent()) pointsGained *= 1 + rockBottomBonus;
+    if(scoreMultiActive) pointsGained *= scoreMultiBonus;
     score += pointsGained;
-    if(sqrBonusActive) score += sqrBonus;  
-    if(rockBottomActive && isTowerBelow30Percent()) score *= 1 + rockBottomBonus;
-    if(scoreMultiActive) score *= scoreMultiBonus;
 
     if (score >= scoreRequirement) {
         updateLevel();
@@ -1380,7 +1457,7 @@ window.keyPressed = function() {
         case "Rotate" :
             if (!noRotate && activePiece.rotate(COLS, ROWS, originX, originY, board)) {
                 if (costlyRotate) {
-                    score -= 10;
+                    score *= .99;
                 }
                 currentPieceRotations++;
                 resetLockDelay();
@@ -1589,7 +1666,6 @@ function getShopGameState() {
         relicsHeld, 
 
         sqrBonus,
-        PerfectionBonus,
         scoreMultiBonus,
         addSqrBonus,
 
