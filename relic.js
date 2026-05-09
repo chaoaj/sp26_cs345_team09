@@ -59,7 +59,6 @@ export const RELICS = [
       game.slowed = this.active;
     },
   }),
-
   new Relic({
     id: "square^2",
     name: "Square squared",
@@ -70,7 +69,6 @@ export const RELICS = [
       game.sqrBonusActive = this.active;
     },
   }),
-
   new Relic({
     id: "rock_bottom",
     name: "Rock Bottom",
@@ -81,7 +79,6 @@ export const RELICS = [
       game.rockBottomActive = this.active;
     },
   }),
-
   new Relic({
     id: "score_multi",
     name: "Score Multi",
@@ -132,13 +129,12 @@ export const RELICS = [
       game.towerBuilderActive = this.active;
     },
   }),
-
   new Relic({
     id: "spin_2_win",
     name: "Spin 2 Win",
     sprite: "assets/relics/rare_spin2win.png",
     rarity: "RARE",
-    description: "Gain +2% score per full rotation of the piece that clears the line.",
+    description: "Increases base score of pieces by +1 per rotation done before placing.",
     ability(game) {
       game.spin2WinActive = this.active;
     },
@@ -153,7 +149,6 @@ export const RELICS = [
       game.turboBoosterActive = this.active;
     },
   }),
-  //not implemented
   new Relic({
     id: "holder",
     name: "Holder",
