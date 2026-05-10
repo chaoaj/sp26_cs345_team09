@@ -1,5 +1,6 @@
 export class RelicMenu {
-  constructor(relics = [], totalPoints = 0) {
+  constructor(relics = [], totalPoints = 0, onRelicChanged) {
+    this.onRelicChanged = onRelicChanged;
     this.relics = relics;
     this.totalPoints = totalPoints;
     this.scrollY = 0;
@@ -21,8 +22,6 @@ export class RelicMenu {
     // Hover state
     this.hoverRelicIndex = -1;
     this.lastContentBounds = null;
-
-    this.onRelicChanged = null;
 
     // Palette
     this.C = {
@@ -358,6 +357,7 @@ export class RelicMenu {
   }
 
   maxScroll() {
+    if (!this.lastContentBounds) return 0;
     const totalCardH = this.relics.length * this.CARD_H + (this.relics.length - 1) * this.CARD_GAP_Y + 12;
     return max(0, totalCardH - this.lastContentBounds.contentH);
   }
@@ -380,6 +380,7 @@ export class RelicMenu {
 
   getRelicAtMouse() {
     const bounds = this.lastContentBounds;
+    if (!bounds) return -1;
     const { contentX, contentY, contentW, contentH } = bounds;
     if (mouseX < contentX || mouseX > contentX + contentW) return -1;
     if (mouseY < contentY || mouseY > contentY + contentH) return -1;
