@@ -18,6 +18,7 @@ export class RelicMenu {
     this.CARD_GAP_Y = 8;
     this.CONTENT_PAD = 12;
     this.SCROLLBAR_W = 5;
+    this.TOPBAR_H = 52;
 
     // Hover state
     this.hoverRelicIndex = -1;
@@ -57,12 +58,14 @@ export class RelicMenu {
       tooltipText: [140,170,142],
       scrollBar: [0, 130, 42],
       scrollTrack:[15, 36, 18],
+      panelBorder: [34, 66, 42],
+      gold: [188, 156, 72],
     };
   }
 
   setRelics(relics) {
     this.relics = relics;
-    this.scrollY = 0;
+    this.scrollY = 0; 
   }
   setPoints(total) {
     this.totalPoints = total;
@@ -85,71 +88,83 @@ export class RelicMenu {
   }
 
   recalcBounds() {
-    this.sidebarW = floor(width * 0.25);
-    this.sidebarH = height;
-    this.sidebarX = width - this.sidebarW;
-    this.sidebarY = 0;
-  }
+   const RELIC_W = 220;
+   const cardCount = this.relics ? this.relics.length : 0;
+   const needed = this.HEADER_H + cardCount * (this.CARD_H + this.CARD_GAP_Y)
+                  + this.FOOTER_H + 24;
+   this.sidebarW = RELIC_W;
+   this.sidebarH = constrain(needed, 250, height - this.TOPBAR_H - 16);
+   this.sidebarX = width - this.sidebarW - 10;
+   this.sidebarY = this.TOPBAR_H + 8;
+ }
 
   //sidebar
   drawSidebar() {
-    const { sidebarX: sx, sidebarY: sy, sidebarW: sw, sidebarH: sh } = this;
-    noStroke();
-    fill(...this.C.sidebarBg);
-    rect(sx, sy, sw, sh);
-    //Glowing left border
-    const pulse = 0.55 + sin(this.animTimer) * 0.2;
-    drawingContext.shadowBlur = 18;
-    drawingContext.shadowColor = `rgba(0,200,60,${pulse})`;
-    stroke(...this.C.borderGlow, 180 + sin(this.animTimer * 1.1) * 40);
-    strokeWeight(1.5);
-    line(sx, sy, sx, sy + sh);
-    drawingContext.shadowBlur = 0;
-    // Corners
-    const S = 14;
-    stroke(...this.C.cornerAccent);
-    strokeWeight(2);
-    noFill();
-    // Top-left
-    line(sx, sy + 2, sx, sy + 2 + S);
-    line(sx, sy + 2, sx + S, sy + 2);
-    // Bottom-left
-    line(sx, sy + sh - 2 - S, sx, sy + sh - 2);
-    line(sx, sy + sh - 2, sx + S, sy + sh - 2);
-  }
+   const { sidebarX: sx, sidebarY: sy, sidebarW: sw, sidebarH: sh } = this;
+
+    //Card background + border + corners
+   noStroke();
+   fill(...this.C.sidebarBg);
+   rect(sx, sy, sw, sh, 4);
+
+   stroke(...this.C.panelBorder);
+   strokeWeight(1);
+   noFill();
+   rect(sx, sy, sw, sh, 4);
+
+   const S = 9;
+   stroke(...this.C.gold, 100);
+   strokeWeight(1.5);
+   line(sx + 2,      sy + 2,     sx + 2 + S, sy + 2    );
+   line(sx + 2,      sy + 2,     sx + 2,     sy + 2 + S);
+   line(sx + sw - 2 - S, sy + 2, sx + sw - 2, sy + 2    );
+   line(sx + sw - 2,     sy + 2, sx + sw - 2, sy + 2 + S);
+   line(sx + 2,      sy + sh - 2, sx + 2 + S, sy + sh - 2    );
+   line(sx + 2,      sy + sh - 2, sx + 2,     sy + sh - 2 - S);
+   line(sx + sw - 2 - S, sy + sh - 2, sx + sw - 2, sy + sh - 2    );
+   line(sx + sw - 2,     sy + sh - 2, sx + sw - 2, sy + sh - 2 - S);
+
+    //Glowing left border pulse
+   const pulse = 0.55 + sin(this.animTimer) * 0.2;
+   drawingContext.shadowBlur  = 14;
+   drawingContext.shadowColor = `rgba(0,200,60,${pulse * 0.65})`;
+   stroke(...this.C.borderGlow, 140 + sin(this.animTimer * 1.1) * 30);
+   strokeWeight(1.5);
+   line(sx, sy + 6, sx, sy + sh - 6);
+   drawingContext.shadowBlur = 0;
+ }
 
   canActivateMore() {
     return this.activeCount() < this.totalPoints;
   }
 
   drawHeader() {
-    const { sidebarX: sx, sidebarW: sw } = this;
-    const midY = this.sidebarY + this.HEADER_H / 2;
-    //Title
-    noStroke();
-    fill(...this.C.title);
-    textFont('Georgia');
-    textStyle(ITALIC);
-    textSize(18);
-    textAlign(LEFT, CENTER);
-    text('Relics', sx + 18, midY);
-    textStyle(NORMAL);
-    //points used
-    const used  = this.activeCount();
-    const total = this.totalPoints;
-    textFont('Georgia');
-    textStyle(ITALIC);
-    textSize(18);
-    textAlign(RIGHT, CENTER);
-    fill(used > total ? color(200, 65, 65) : color(...this.C.tabInactive));
-    drawingContext.letterSpacing = '1px';
-    text(`${used}/${total} RP`, sx + sw - 14, midY);
-    drawingContext.letterSpacing = '0px';
-    // Divider
-    stroke(...this.C.divider);
-    strokeWeight(1);
-    line(sx + 10, this.sidebarY + this.HEADER_H, sx + sw - 10, this.sidebarY + this.HEADER_H);
-  }
+   const { sidebarX: sx, sidebarW: sw } = this;
+   const midY = this.sidebarY + this.HEADER_H / 2;
+   noStroke();
+   fill(...this.C.title);
+   textFont('Georgia');
+   textStyle(ITALIC);
+   textSize(17);
+   textAlign(LEFT, CENTER);
+   text('Relics', sx + 14, midY);
+   textStyle(NORMAL);
+   const used  = this.activeCount();
+   const total = this.totalPoints;
+   textFont('Georgia');
+   textStyle(ITALIC);
+   textSize(15);
+   textAlign(RIGHT, CENTER);
+    //dim number, gold "RP"
+   fill(used > total ? color(200, 65, 65) : color(...this.C.tabInactive));
+   drawingContext.letterSpacing = '1px';
+   text(`${used} / ${total} RP`, sx + sw - 12, midY);
+   drawingContext.letterSpacing = '0px';
+   textStyle(NORMAL);
+   stroke(...this.C.divider);
+   strokeWeight(1);
+   line(sx + 10, this.sidebarY + this.HEADER_H, sx + sw - 10, this.sidebarY + this.HEADER_H);
+ }
 
   drawContent() {
     const { sidebarX: sx, sidebarW: sw } = this;
@@ -240,56 +255,54 @@ export class RelicMenu {
   }
 
   drawFooter() {
-    const { sidebarX: sx, sidebarW: sw, sidebarH: sh } = this;
-    const fy = sh - this.FOOTER_H;
+   const { sidebarX: sx, sidebarW: sw, sidebarY: sy, sidebarH: sh } = this;
+   const fy = sy + sh - this.FOOTER_H;
 
-    stroke(...this.C.divider);
-    strokeWeight(1);
-    line(sx + 10, fy, sx + sw - 10, fy);
-    // Label
-    textFont('monospace');
-    textSize(16);
-    textAlign(LEFT, TOP);
-    noStroke();
-    fill(...this.C.footerLabel);
-    drawingContext.letterSpacing = '1.5px';
-    text('RECOLLECTION', sx + 14, fy + 10);
-    // Point pips
-    const used = this.activeCount();
-    const total = this.totalPoints;
-    const pipMax = max(total, used);
-    const pipSize = 8;
-    const pipGap = 12;
-    const pipsW = pipMax * pipGap - (pipGap - pipSize);
-    const pipStartX = sx + sw / 2 - pipsW / 2;
-    const pipY = fy + 36;
-    for (let i = 0; i < pipMax; i++) {
-      const px = pipStartX + i * pipGap;
-      if (i < used) {
-        drawingContext.shadowBlur = 6;
-        drawingContext.shadowColor = 'rgba(0,195,55,0.7)';
-        fill(...this.C.pointUsed);
-      } else if (i < total) {
-        drawingContext.shadowBlur = 0;
-        fill(...this.C.pointAvail);
-      } else {
-        drawingContext.shadowBlur = 0;
-        fill(...this.C.pointOver);
-      }
-      noStroke();
-      circle(px, pipY, pipSize);
+   stroke(...this.C.divider);
+   strokeWeight(1);
+   line(sx + 10, fy, sx + sw - 10, fy);
+
+   textFont('monospace');
+   textSize(10);
+   textAlign(LEFT, TOP);
+   noStroke();
+   fill(...this.C.footerLabel);
+   drawingContext.letterSpacing = '1.5px';
+   text('RECOLLECTION', sx + 14, fy + 10);
+   drawingContext.letterSpacing = '0px';
+
+   const used   = this.activeCount();
+   const total  = this.totalPoints;
+   const pipMax = max(total, used);
+   const pipSize = 8, pipGap = 12;
+   const pipsW  = pipMax * pipGap - (pipGap - pipSize);
+   const pipX0  = sx + sw / 2 - pipsW / 2;
+   const pipY   = fy + 34;
+
+   for (let i = 0; i < pipMax; i++) {
+     const ppx = pipX0 + i * pipGap;
+     if (i < used) {
+       drawingContext.shadowBlur  = 6;
+       drawingContext.shadowColor = 'rgba(0,195,55,0.7)';
+       fill(...this.C.pointUsed);
+     } else if (i < total) {
+       drawingContext.shadowBlur = 0;
+       fill(...this.C.pointAvail);
+     } else {
+       drawingContext.shadowBlur = 0;
+       fill(...this.C.pointOver);
     }
-    drawingContext.shadowBlur = 0;
-  }
+     noStroke();
+     circle(ppx, pipY, pipSize);
+   }
+   drawingContext.shadowBlur = 0;
+ }
 
 
   drawTooltip(relic) {
-    const tw = 200;
-    const th = 100;
-    // Always open left of bar
-    let tx = this.sidebarX - tw - 14;
-    let ty = mouseY - 10;
-    ty = constrain(ty, 4, height - th - 4);
+    const tw = 210, th = 105;
+    let tx = this.sidebarX - tw - 12;
+    let ty = constrain(mouseY - 12, 4, height - th - 4);
 
     push();
     noStroke();
@@ -304,16 +317,16 @@ export class RelicMenu {
     noStroke();
     textFont('Georgia');
     textStyle(BOLD);
-    textSize(16);
+    textSize(15);
     textAlign(LEFT, TOP);
     fill(...this.C.tooltipTitle);
     text(relic.name, tx + 10, ty + 9);
     textStyle(NORMAL);
 
     textFont('monospace');
-    textSize(14);
+    textSize(12);
     fill(...this.C.tooltipText);
-    text(relic.description || relic.shortDesc || '', tx + 10, ty + 26, tw - 20);
+    text(relic.description || relic.shortDesc || '', tx + 10, ty + 28, tw - 20);
     pop();
   }
 

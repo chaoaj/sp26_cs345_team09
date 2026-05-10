@@ -131,7 +131,7 @@ const STAGE_INTRO_FADE_IN = 500;
 const STAGE_INTRO_HOLD = 700;
 const STAGE_INTRO_FADE_OUT = 500;
 const STAGE_INTRO_DURATION = STAGE_INTRO_FADE_IN + STAGE_INTRO_HOLD + STAGE_INTRO_FADE_OUT;
-
+const TOPBAR_H = 52;
 //relic methods
 const game = {
     sqrBonusActive,
@@ -153,6 +153,22 @@ const game = {
     doubleHoldActive,
     scoreAdd,
 }
+//Game Theme
+const THEME = {
+  bgMain: [6, 15,8 ],
+  panelBg: [10, 22, 13],
+  panelBorder: [34, 66, 42],
+  topbarBg: [4, 11, 6 ],
+  gold: [188, 156, 72],
+  goldDim: [100, 84, 40],
+  green: [0, 200, 60],
+  greenDim: [0, 110, 36],
+  textBright: [215, 228, 210],
+  textMid: [130, 155, 132],
+  textDim: [68, 92, 72],
+  divider: [26, 52, 31],
+  red: [200, 65, 65],
+};
 
 window.setup = async function() {
     createCanvas(windowWidth, windowHeight);
@@ -222,31 +238,29 @@ function applyRelics() {
     scoreAdd = game.scoreAdd;
 }
 window.draw = function() {
-    background(30);
-    if (gameState === "stageIntro") {
-        drawStageIntro();
-        return;
+  background(...THEME.bgMain);
+  drawTopBar();
+  if (gameState === 'stageIntro') {
+    drawStageIntro();
+    return;
+  }
+  if (gameState === 'standard') {
+    drawBoard();
+    if (!stealthyPieces) drawGhost();
+    drawActivePiece();
+    if (limitedVision) drawLimitedVision();
+    drawSidebar();
+    if (!gameOver && !paused) {
+      handleHeldInput();
+      fall();
     }
-    if (gameState === "standard") {
-        drawBoard();
-        if (!stealthyPieces) {
-            drawGhost();
-        }
-        drawActivePiece();
-        if (limitedVision) {
-            drawLimitedVision();
-        }
-        drawSidebar();
-        if (!gameOver && !paused) {
-            handleHeldInput();
-            fall();
-        }
-    }
-    if (gameState === "shop") drawShop(recollectionUsed, recollection);
-    if (gameOver) drawGameOver();
-    if (paused) drawPaused();
-    if (relicMenu) relicMenu.draw();
-}
+  }
+ 
+  if (gameState === 'shop') drawShop(recollectionUsed, recollection);
+  if (gameOver) drawGameOver();
+  if (paused) drawPaused();
+  if (relicMenu) relicMenu.draw();
+};
 window.preload = function() {
   preloadRelicSprites();
 }
@@ -447,13 +461,9 @@ function lockPiece() {
 
 function holdPiece() {
     if (!activePiece) return;
-
     if (!doubleHoldActive) {
-
         if (holdUsed) return;
-
         const currentType = activePiece.type;
-
         if (holdType === null) {
             holdType = currentType;
             activePiece = spawnPiece();
@@ -462,13 +472,11 @@ function holdPiece() {
             holdType = currentType;
             activePiece = spawnPieceOfType(swapType);
         }
-
         holdUsed = true;
         return;
     }
     //holder relic
     const currentType = activePiece.type;
-
     if (holdType === null) {
         holdType = currentType;
         activePiece = spawnPiece();
@@ -482,16 +490,13 @@ function holdPiece() {
         holdType2 = currentType;
         activePiece = spawnPieceOfType(swapType);
     }
-
     lockStartedAt = 0;
     lastDrop = millis();
 }
 
 function clearLines() {
     let cleared = 0;
-    topClearedRow = ROWS; // tracks the highest row index that was cleared
-
-    // Step 1: Clear full lines
+    topClearedRow = ROWS;
     for (let r = ROWS - 1; r >= 0; r--) {
         if (board[r].every(cell => cell !== null)) {
             board.splice(r, 1);
@@ -501,10 +506,8 @@ function clearLines() {
             if (r < topClearedRow) topClearedRow = r;
         }
     }
-
     if (cleared === 0) return 0;
-
-    // Step 2: Extra Firepower — clear one extra line above on tetris
+    //extra firepower
     if (extraFirepowerActive && cleared === 4) {
         const targetRow = topClearedRow - 1;
         if (targetRow >= 0) {
@@ -515,7 +518,7 @@ function clearLines() {
         cleared += 1; // Count the extra cleared line for scoring
     }
 
-    // Step 3: Bubble Up — clear up to 2 consecutive 9-tile lines above
+    //Bubble Up - clear up to 2 consecutive 9-tile lines above
     if (bubbleUpActive && cleared >= 2) {
         let bubbleCleared = 0;
         for (let r = topClearedRow - 1; r >= 0 && bubbleCleared < 2; r--) {
@@ -542,27 +545,22 @@ function updateScore(cleared) {
 
     // Sqr squared relic
     if(sqrBonusActive) baseScore += sqrBonus; 
-
     // Spin 2 Win relic
     if (spin2WinActive && currentPieceRotations > 0) {
         baseScore += 1 * currentPieceRotations;
     }
-
     // Score Multi Calculations
 
     // Cleaner Relic
     if (cleanerActive && cleared > 0 && board.every(row => row.every(cell => cell === null))) {
         scoreMulti += cleanerBonus;
-    }   
-
+    }
     // Multi Score relic
     if(scoreMultiActive) {
         scoreMulti += scoreMultiBonus * linesCleared;
     }
-
     // Rock Bottom relic
     if(rockBottomActive && isTowerBelow15Percent()) scoreMulti += rockBottomBonus;
-
     // Combo Line relic
     if (comboLineActive) {
         if (cleared > 0) {
@@ -572,7 +570,6 @@ function updateScore(cleared) {
             comboStreak = 0;
         }
     }
-
     // Turbo Booster relic
     if (turboBoosterActive && lastMoveWasHardDrop && cleared > 0) {
         scoreMulti += turboBoosterBonus;
@@ -582,19 +579,16 @@ function updateScore(cleared) {
     if (swanSongActive && pieceBag - numLockedPieces <= 0) {
         scoreMulti *= swanSongBonus;
     }
-        
     // Tower Builder relic
     if (towerBuilderActive && cleared > 0 && topClearedRow < 8) {
         scoreMulti *= towerBuilderBonus;
     }
-
     // Stack Master relic
     if (stackMasterActive) {
         scoreMulti *= 1 + (0.005 * howManyTilesAbove50Percent());
     }
     
     score += baseScore * scoreMulti;
-
     if (score >= scoreRequirement) {
         updateLevel();
     }
@@ -608,7 +602,6 @@ function isTowerAbove60Percent() {
             return true;
         }
     }
-
     return false;
 }
 
@@ -620,7 +613,6 @@ function isTowerBelow15Percent() {
             return true;
         }
     }
-
     return false;
 }
 
@@ -635,7 +627,6 @@ function howManyTilesAbove50Percent() {
 
 function updateLevel() {
     console.log("updating level!");
-
     if (level === 2) {
         activateBoss();
     }
@@ -733,31 +724,31 @@ function drawBox(x, y, size, clr) {
 }
 
 function drawBoard() {
-    fill(15); 
-    noStroke();
-    rect(originX, originY, BOARD_W, BOARD_H);
-    for (let r = 0; r < ROWS; r++)
-        for (let c = 0; c < COLS; c++)
-            if (board[r][c])
-                drawBox(originX + c * BOX_SIZE, originY + r * BOX_SIZE, BOX_SIZE, board[r][c].color);
-    stroke(40); 
-    strokeWeight(0.5);
-    for (let r = 0; r <= ROWS; r++)
-        line(originX, originY + r * BOX_SIZE, originX + BOARD_W, originY + r * BOX_SIZE);
-    for (let c = 0; c <= COLS; c++)
-        line(originX + c * BOX_SIZE, originY, originX + c * BOX_SIZE, originY + BOARD_H);
-    noFill(); 
-    stroke(200); 
-    strokeWeight(2);
-    rect(originX, originY, BOARD_W, BOARD_H);
-
-    push();
-    noStroke();
-    fill(255);
-    textAlign(CENTER, BOTTOM);
-    textSize(18);
-    text("STAGE " + stage, originX + BOARD_W / 2, originY - 10);
-    pop();
+  // Background
+  noStroke();
+  fill(...THEME.bgMain);
+  rect(originX, originY, BOARD_W, BOARD_H);
+  //Filled cells
+  for (let r = 0; r < ROWS; r++)
+    for (let c = 0; c < COLS; c++)
+      if (board[r][c])
+        drawBox(originX + c * BOX_SIZE, originY + r * BOX_SIZE, BOX_SIZE, board[r][c].color);
+ 
+  // Grid lines
+  stroke(22, 44, 26);
+  strokeWeight(0.4);
+  for (let r = 0; r <= ROWS; r++)
+    line(originX, originY + r * BOX_SIZE, originX + BOARD_W, originY + r * BOX_SIZE);
+  for (let c = 0; c <= COLS; c++)
+    line(originX + c * BOX_SIZE, originY, originX + c * BOX_SIZE, originY + BOARD_H);
+ 
+  // Board border
+  noFill();
+  stroke(...THEME.panelBorder);
+  strokeWeight(1.5);
+  rect(originX, originY, BOARD_W, BOARD_H);
+  //Diamond accent
+  drawDiamondAccent(originX + BOARD_W / 2, originY - 1);
 }
 
 function drawGhost() {
@@ -777,117 +768,220 @@ function drawActivePiece() {
 }
 
 function drawSidebar() {
-    const leftPanelX = originX - (5 * BOX_SIZE) - 24;
-    const rightPanelX = originX + BOARD_W + 20;
-    const panelY = originY;
-    const previewW = 5 * BOX_SIZE;
-    const previewH = 4 * BOX_SIZE;
-
-    function drawPreviewPiece(type, x, y) {
-        if (!type) return;
-        const cells = Piece.SHAPES[type].cells;
-        const clr = Piece.SHAPES[type].color;
-        const rows = cells.map(([r]) => r);
-        const cols = cells.map(([, c]) => c);
-        const minRow = Math.min(...rows);
-        const maxRow = Math.max(...rows);
-        const minCol = Math.min(...cols);
-        const maxCol = Math.max(...cols);
-        const shapeW = (maxCol - minCol + 1) * BOX_SIZE;
-        const shapeH = (maxRow - minRow + 1) * BOX_SIZE;
-        const offsetX = Math.floor((previewW - shapeW) / 2) - minCol * BOX_SIZE;
-        const offsetY = Math.floor((previewH - shapeH) / 2) - minRow * BOX_SIZE;
-
-        cells.forEach(([r, c]) =>
-            drawBox(x + offsetX + c * BOX_SIZE, y + offsetY + r * BOX_SIZE, BOX_SIZE, clr)
-        );
-    }
-
-    fill(255); 
-    noStroke(); 
-    textAlign(LEFT, TOP);
-    textSize(14); text("HOLD", leftPanelX, panelY);
-    const holdPreviewX = leftPanelX;
-    const holdPreviewY = panelY + 20;
-    fill(15); 
-    noStroke();
-    rect(holdPreviewX, holdPreviewY, previewW, previewH);
-    drawPreviewPiece(holdType, holdPreviewX, holdPreviewY);
-
-    fill(255);
-    //holder relic draw 2nd held
-    if (doubleHoldActive) {
-        const gap = 12;
-        const hold2X = holdPreviewX - previewW - gap;
-        const hold2Y = holdPreviewY;
-
-        fill(255);
-        noStroke();
-        textSize(14);
-        text("HOLD 2", hold2X, panelY);
-
-        fill(15);
-        noStroke();
-        rect(hold2X, hold2Y, previewW, previewH);
-
-        drawPreviewPiece(holdType2, hold2X, hold2Y);
-
-        fill(255);
-    }
-
-    // GOAL
-    textSize(14); text("GOAL", leftPanelX, panelY + 160);
-    textSize(22); text(scoreRequirement, leftPanelX, panelY + 185);
-
-    // SCORE
-    textSize(14); text("SCORE", leftPanelX, panelY + 225);
-    textSize(22); text(score, leftPanelX, panelY + 250);
-
-    // TOTAL SCORE
-    textSize(14); text("TOTAL SCORE", leftPanelX, panelY + 290);
-    textSize(22); text(Math.trunc(totalScore), leftPanelX, panelY + 315);
-
-    // STAGE / LEVEL
-    textSize(14); text("STAGE, LEVEL", leftPanelX, panelY + 355);
-    textSize(22); text(stage + ", " + level, leftPanelX, panelY + 380);
-
-    // HINDRANCE
-    textSize(14); text("HINDRANCE", leftPanelX, panelY + 420);
-    textSize(18);
-    fill(currentBoss ? color(255, 110, 110) : color(220));
-    text(getHindranceText(), leftPanelX, panelY + 445, previewW + 24, 44);
-
-    fill(255);
-
-    // LINES
-    textSize(14); text("LINES", leftPanelX, panelY + 485);
-    textSize(22); text(linesCleared, leftPanelX, panelY + 510);
-
-    // PIECES LEFT
-    textSize(14); text("PIECES LEFT", leftPanelX, panelY + 550);
-    textSize(22); text(pieceBag - numLockedPieces, leftPanelX, panelY + 575);
-
-    // RECOLLECTION
-    textSize(14); text("RECOLLECTION", leftPanelX, panelY + 615);
-    textSize(22); text(recollectionUsed + " / " + recollection, leftPanelX, panelY + 630);
-
-    textSize(14); text("NEXT", rightPanelX, panelY);
-    const nextPreviewX = rightPanelX;
-    const nextPreviewY = panelY + 20;
-    fill(15);
-    noStroke();
-    rect(nextPreviewX, nextPreviewY, previewW, previewH);
-    drawPreviewPiece(nextType, nextPreviewX, nextPreviewY);
-
-    textSize(12); 
-    fill(255);
-    text("← → move", rightPanelX, panelY + 170);
-    text("↑ rotate", rightPanelX, panelY + 188);
-    text("↓ soft drop", rightPanelX, panelY + 206);
-    text("SPACE hard drop", rightPanelX, panelY + 224);
-    text("C hold", rightPanelX, panelY + 242);
-    text("ESC pause", rightPanelX, panelY + 260);
+  drawLeftPanel();
+  drawRightPanel();
 }
+
+function drawRightPanel() {
+  const previewW = 5 * BOX_SIZE;
+  const previewH = 4 * BOX_SIZE;
+  const pw = previewW + 34;
+  const ph = BOARD_H;
+  const px = originX + BOARD_W + 14;
+  const py = originY;
+
+  drawPanelCard(px, py, pw, ph);
+  drawDiamondAccent(px + pw / 2, py - 1);
+ 
+  let cy = py + 14;
+ 
+  //next
+  drawSectionLabel('NEXT', px + pw / 2, cy, CENTER); 
+  cy += 14;
+  const npx = px + (pw - previewW) / 2;
+  noStroke();
+  fill(...THEME.bgMain);
+  rect(npx, cy, previewW, previewH, 2);
+  stroke(...THEME.panelBorder);
+  strokeWeight(1);
+  noFill();
+  rect(npx, cy, previewW, previewH, 2);
+  drawPreviewPiece(nextType, npx, cy, previewW, previewH);
+  cy += previewH + 10;
+  drawDividerLine(px + 10, cy, px + pw - 10); 
+  cy += 10;
+ 
+  //keybinds
+  drawSectionLabel('KEYS', px + 12, cy);
+  cy += 13;
+  const keyBindings = [
+    ['A · D', 'MOVE'  ],
+    ['W',     'ROTATE'],
+    ['S',     'SOFT'  ],
+    ['SPC',   'HARD'  ],
+    ['C',     'HOLD'  ],
+    ['ESC',   'PAUSE' ],
+  ];
+  for (const [k, action] of keyBindings) {
+    const badgeW = 34, badgeH = 16;
+    // Key badge
+    stroke(...THEME.panelBorder);
+    strokeWeight(1);
+    noFill();
+    rect(px + 12, cy, badgeW, badgeH, 2);
+    noStroke();
+    fill(...THEME.textMid);
+    textFont('monospace');
+    textSize(9);
+    textAlign(CENTER, CENTER);
+    text(k, px + 12 + badgeW / 2, cy + badgeH / 2);
+    // Action
+    fill(...THEME.textDim);
+    textAlign(RIGHT, CENTER);
+    textSize(10);
+    text(action, px + pw - 12, cy + badgeH / 2);
+    cy += 20;
+  }
+  cy += 6;
+  drawDividerLine(px + 10, cy, px + pw - 10); 
+  cy += 10;
+  //hindrance
+  drawSectionLabel('HINDRANCE', px + 12, cy); cy += 13;
+  const boxH = 52;
+  noStroke();
+  fill(...THEME.bgMain);
+  rect(px + 10, cy, pw - 20, boxH, 2);
+  stroke(...THEME.panelBorder);
+  strokeWeight(1);
+  noFill();
+  rect(px + 10, cy, pw - 20, boxH, 2);
+const txt = getHindranceText();
+//investigate******************************
+if (txt && txt !== '–') {
+    noStroke();
+    fill(typeof currentBoss !== 'undefined' && currentBoss
+    ? color(...THEME.red) : color(...THEME.textMid));
+    textFont('monospace');
+    textSize(11);
+    textAlign(LEFT, CENTER);
+    text(txt, px + pw / 2, cy + boxH / 2, pw - 28);
+} else {
+    // em dash placeholder
+    noStroke();
+    fill(...THEME.textDim);
+    textFont('monospace');
+    textSize(14);
+    textAlign(CENTER, CENTER);
+    text('–', px + pw / 2, cy + boxH / 2);
+}
+}
+
+function drawLeftPanel() {
+  const previewW = 5 * BOX_SIZE;
+  const previewH = 4 * BOX_SIZE;
+  const pw = previewW + 34;
+  const ph = BOARD_H;
+  const px = originX - pw - 14;
+  const py = originY;
+ 
+  drawPanelCard(px, py, pw, ph);
+  drawDiamondAccent(px + pw / 2, py - 1);
+ 
+  let cy = py + 14;
+ 
+  //hold
+  drawSectionLabel('HOLD', px + pw / 2, cy, CENTER);
+  cy += 14;
+  const hpx = px + (pw - previewW) / 2;
+  noStroke();
+  fill(...THEME.bgMain);
+  rect(hpx, cy, previewW, previewH, 2);
+  stroke(...THEME.panelBorder);
+  strokeWeight(1);
+  noFill();
+  rect(hpx, cy, previewW, previewH, 2);
+  drawPreviewPiece(holdType, hpx, cy, previewW, previewH);
+  //second hold relic - needs to be tested idk if it works
+  if (doubleHoldActive) {
+    const h2x = hpx - previewW - 8;
+    noStroke(); 
+    fill(...THEME.bgMain);
+    rect(h2x, cy, previewW, previewH, 2);
+    stroke(...THEME.panelBorder);
+    strokeWeight(1);
+    noFill();
+    rect(h2x, cy, previewW, previewH, 2);
+    drawPreviewPiece(holdType2, h2x, cy, previewW, previewH);
+  }
+  cy += previewH + 10;
+  drawDividerLine(px + 10, cy, px + pw - 10);
+  cy += 10;
+ 
+  //score
+  drawSectionLabel('SCORE', px + 12, cy);
+  cy += 13;
+  drawStatRow('CURRENT', typeof score !== 'undefined' 
+    ? score : 0, px, cy, pw);
+  cy += 19;
+  drawStatRow('TOTAL', typeof totalScore !== 'undefined' 
+    ? Math.trunc(totalScore) : 0, px, cy, pw); 
+  cy += 16;
+  drawDividerLine(px + 10, cy, px + pw - 10); cy += 10;
+ 
+  //goal
+  drawSectionLabel('GOAL', px + 12, cy);
+  cy += 13;
+  noStroke();
+  textFont('Georgia');
+  textSize(22);
+  textAlign(LEFT, TOP);
+  fill(...THEME.textBright);
+  text(typeof score !== 'undefined' ? score : 0, px + 12, cy);
+  textSize(12);
+  fill(...THEME.textDim);
+  textAlign(RIGHT, TOP);
+  text(`/ ${typeof scoreRequirement !== 'undefined' ? scoreRequirement : 750}`, px + pw - 12, cy + 8);
+  cy += 30;
+ 
+  drawDividerLine(px + 10, cy, px + pw - 10); cy += 10;
+  //progress
+  drawSectionLabel('PROGRESS', px + 12, cy); cy += 13;
+  const stg = typeof stage !== 'undefined' ? stage : 1;
+  const lvl = typeof level !== 'undefined' ? level : 1;
+  drawStatRow('LEVEL',`${stg} · ${lvl}`, px, cy, pw); cy += 19;
+  drawStatRow('LINES',linesCleared, px, cy, pw);
+  cy += 19;
+  drawStatRow('PIECES', pieceBag - (numLockedPieces || 0), px, cy, pw);
+  cy += 16;
+  drawDividerLine(px + 10, cy, px + pw - 10);
+  cy += 10;
+  //Recollection
+  drawSectionLabel('RECOLLECTION', px + 12, cy);
+  cy += 13;
+  const recUsed = typeof recollectionUsed !== 'undefined' ? recollectionUsed : 0;
+  const recTotal = typeof recollection !== 'undefined' ? recollection : 5;
+  noStroke();
+  textFont('monospace');
+  textSize(13);
+  textAlign(LEFT, TOP);
+  fill(...THEME.textBright);
+  text(`${recUsed} / ${recTotal}`, px + 12, cy);
+  cy += 18;
+ 
+  //pips
+  const pipSize = 8, pipGap = 12;
+  const pipMax = max(recTotal, recUsed);
+  const pipsW = pipMax * pipGap - (pipGap - pipSize);
+  const pipX0 = px + pw / 2 - pipsW / 2;
+  for (let i = 0; i < pipMax; i++) {
+    const ppx = pipX0 + i * pipGap;
+    if (i < recUsed) {
+      drawingContext.shadowBlur = 6;
+      drawingContext.shadowColor = 'rgba(0,195,55,0.7)';
+      fill(...THEME.green);
+    } else if (i < recTotal) {
+      drawingContext.shadowBlur = 0;
+      fill(...THEME.panelBorder);
+    } else {
+      drawingContext.shadowBlur = 0;
+      fill(...THEME.red);
+    }
+    noStroke();
+    circle(ppx, cy + pipSize / 2, pipSize);
+  }
+  drawingContext.shadowBlur = 0;
+}
+
 //temp game over screen til we have a ui/screen built for it
 function drawGameOver() {
     fill(0, 0, 0, 160); 
@@ -936,7 +1030,6 @@ function drawPaused() {
         textSize(16);
         text(btn.label, btn.x + btn.w / 2, btn.y + btn.h / 2);
     }
-
     if (settingsModalProgress > 0.01) drawSettingsOverlay();
 }
 
@@ -1383,7 +1476,7 @@ function rebuildKeyMap() {
 
 window.mouseMoved = function() {
     if (gameState === "shop") shopMouseMoved();
-    relicMenu.mouseMoved();
+    if (relicMenu) relicMenu.mouseMoved();
 }
 
 window.mousePressed = function() {
@@ -1617,7 +1710,7 @@ function softReset() {
     lockStartedAt = 0;
     pauseSettingsOpen = false;
     nextType = randomPiece();
-    activePiece  = spawnPiece();
+    activePiece = spawnPiece();
     lastDrop = millis();
 }
 //attempt for adjusting for window resize, we need to figure out exactly how we want to handle it whether
@@ -1750,4 +1843,168 @@ function drawLimitedVision() {
     ctx.fillRect(0, 0, width, height);
 
     pop();
+}
+function drawTopBar() {
+  //bg
+  noStroke();
+  fill(...THEME.topbarBg);
+  rect(0, 0, width, TOPBAR_H);
+  // Bottom divider
+  stroke(...THEME.panelBorder);
+  strokeWeight(1);
+  line(0, TOPBAR_H - 1, width, TOPBAR_H - 1);
+ 
+  const midY = TOPBAR_H / 2;
+ 
+  // ── ✦ Relics (left) ─────────────────────────
+  noStroke();
+  fill(...THEME.gold);
+  textFont('Georgia');
+  textStyle(ITALIC);
+  textSize(16);
+  textAlign(LEFT, CENTER);
+  text('✦  Relics', 18, midY);
+  textStyle(NORMAL);
+ 
+  // ── ✦ STAGE N ✦ pill (center) ───────────────
+  const stageStr = `✦  STAGE ${stage}  ✦`;
+  textFont('Georgia');
+  textSize(14);
+  noStroke();
+  fill(...THEME.gold);
+  textAlign(CENTER, CENTER);
+  const pillW = textWidth(stageStr) + 30;
+  const pillH = 28;
+  stroke(...THEME.gold, 140);
+  strokeWeight(1);
+  noFill();
+  rect(width / 2 - pillW / 2, midY - pillH / 2, pillW, pillH, 3);
+  noStroke();
+  fill(...THEME.gold);
+  text(stageStr, width / 2, midY);
+ 
+  const rpUsed = (relicMenu) ? relicMenu.activeCount() : 0;
+  const rpTotal = (relicMenu) ? relicMenu.totalPoints : 5;
+  textFont('Georgia');
+  textSize(14);
+  fill(rpUsed > rpTotal ? color(...THEME.red) : color(...THEME.textMid));
+  textAlign(RIGHT, CENTER);
+  const fullRpStr = `${rpUsed} / ${rpTotal} RP`;
+  //Split at the space before RP
+  const rpNumPart = `${rpUsed} / `;
+  const rpTagPart = `${rpTotal} RP`;
+  // measure to position
+  const rpTagW = textWidth(rpTagPart);
+  const btnRightEdge = width - 56;
+  fill(...THEME.textMid);
+  textAlign(RIGHT, CENTER);
+  text(rpNumPart + rpTagPart, btnRightEdge, midY);
+  fill(...THEME.gold);
+  textAlign(RIGHT, CENTER);
+  text(rpTagPart, btnRightEdge, midY);
+ 
+  const btnW = 36, btnH = 28;
+  const btnX = width - btnW - 10;
+  const btnY = midY - btnH / 2;
+  stroke(...THEME.panelBorder);
+  strokeWeight(1);
+  noFill();
+  rect(btnX, btnY, btnW, btnH, 4);
+  noStroke();
+  fill(...THEME.textMid);
+  textFont('monospace');
+  textSize(16);
+  textAlign(CENTER, CENTER);
+  text('···', btnX + btnW / 2, midY);
+}
+
+function drawPreviewPiece(type, bx, by, bw, bh) {
+  if (!type || !Piece.SHAPES[type]) return;
+  const cells = Piece.SHAPES[type].cells;
+  const clr = Piece.SHAPES[type].color;
+  const rows = cells.map(([r]) => r);
+  const cols = cells.map(([, c]) => c);
+  const minRow = Math.min(...rows), maxRow = Math.max(...rows);
+  const minCol = Math.min(...cols), maxCol = Math.max(...cols);
+  const shapeW = (maxCol - minCol + 1) * BOX_SIZE;
+  const shapeH = (maxRow - minRow + 1) * BOX_SIZE;
+  const ox = Math.floor((bw - shapeW) / 2) - minCol * BOX_SIZE;
+  const oy = Math.floor((bh - shapeH) / 2) - minRow * BOX_SIZE;
+  cells.forEach(([r, c]) =>
+    drawBox(bx + ox + c * BOX_SIZE, by + oy + r * BOX_SIZE, BOX_SIZE, clr)
+  );
+}
+ 
+
+
+function drawPanelCard(x, y, w, h) {
+  noStroke();
+  fill(...THEME.panelBg);
+  rect(x, y, w, h, 4);
+ 
+  stroke(...THEME.panelBorder);
+  strokeWeight(1);
+  noFill();
+  rect(x, y, w, h, 4);
+ 
+  const S = 9;
+  stroke(...THEME.gold, 100);
+  strokeWeight(1.5);
+  noFill();
+  // TL
+  line(x + 2, y + 2, x + 2 + S, y + 2);
+  line(x + 2, y + 2, x + 2, y + 2 + S);
+  // TR
+  line(x + w - 2 - S, y + 2, x + w - 2, y + 2);
+  line(x + w - 2, y + 2, x + w - 2, y + 2 + S);
+  // BL
+  line(x + 2, y + h - 2, x + 2 + S, y + h - 2);
+  line(x + 2, y + h - 2, x + 2, y + h - 2 - S);
+  // BR
+  line(x + w - 2 - S, y + h - 2, x + w - 2, y + h - 2);
+  line(x + w - 2, y + h - 2, x + w - 2, y + h - 2 - S);
+}
+ 
+// Small gold diamond sitting on the top edge of a panel 
+function drawDiamondAccent(cx, py) {
+  fill(...THEME.gold);
+  noStroke();
+  push();
+  translate(cx, py);
+  rotate(PI / 4);
+  rect(-4, -4, 8, 8);
+  pop();
+}
+ 
+// Upper cased monospace section label in gold
+function drawSectionLabel(label, x, y, align) {
+  noStroke();
+  fill(...THEME.gold);
+  textFont('monospace');
+  textSize(10);
+  textAlign(align === CENTER ? CENTER : LEFT, TOP);
+  drawingContext.letterSpacing = '1.5px';
+  text(label, x, y);
+  drawingContext.letterSpacing = '0px';
+}
+ 
+// Thin horizontal div
+function drawDividerLine(x1, y, x2) {
+  stroke(...THEME.divider);
+  strokeWeight(1);
+  line(x1, y, x2, y);
+}
+
+function drawStatRow(label, value, panelX, y, panelW, valueSize) {
+  valueSize = valueSize || 13;
+  noStroke();
+  textFont('monospace');
+  textSize(10);
+  textAlign(LEFT, TOP);
+  fill(...THEME.textMid);
+  text(label, panelX + 12, y);
+  textAlign(RIGHT, TOP);
+  fill(...THEME.textBright);
+  textSize(valueSize);
+  text(value, panelX + panelW - 12, y);
 }
