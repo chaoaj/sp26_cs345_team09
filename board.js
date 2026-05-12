@@ -66,10 +66,20 @@ let settingsTab = "general";
 let kbScrollY = 0;
 let dragSlider = null;
 let settingsRegions = [];
+const DEFAULT_AUDIO = {
+  master: 100,
+  music: 70,
+  sfx: 80,
+};
+
+let audioSettings =
+  JSON.parse(localStorage.getItem('rq_audio')) ||
+  structuredClone(DEFAULT_AUDIO);
+
 let settingsSliders = [
-    {label: "Master Volume", value: 80},
-    {label: "Music Volume", value: 60},
-    {label: "SFX Volume", value: 75},
+    {label: "Master Volume", value: audioSettings.master},
+    {label: "Music Volume", value: audioSettings.music},
+    {label: "SFX Volume", value: audioSettings.sfx},
 ];
 //leader board
 let scoreSubmitted = false;
@@ -171,6 +181,30 @@ const THEME = {
   divider: [26, 52, 31],
   red: [200, 65, 65],
 };
+//audio settings helper
+function applyAudioSettings() {
+
+  // gameplay music
+  if (window.gameMusic) {
+
+    window.gameMusic.setVolume(
+      (audioSettings.master / 100) *
+      (audioSettings.music / 100)
+    );
+  }
+
+  // gameplay sound effects
+  if (window.gameSounds) {
+
+    const sfxVolume =
+      (audioSettings.master / 100) *
+      (audioSettings.sfx / 100);
+
+    window.gameSounds.forEach(sound => {
+      sound.setVolume(sfxVolume);
+    });
+  }
+}
 
 window.setup = async function() {
     createCanvas(windowWidth, windowHeight);
@@ -1069,6 +1103,9 @@ function handlePauseMenuClick() {
                 settingsModalOpen = false;
                 settingsModalProgress = 0;
                 cancelSettingsListen();
+                if (!song.isPlaying()) {
+                    song.play();
+                }
                 return;
             case "restart":
                 pauseSettingsOpen = false;
