@@ -23,6 +23,7 @@ class Relic {
     this.sprite = sprite;
     this.rarity = RARITY[rarity];
     this.rarityKey = rarity;
+    this.level = 1;
     this.description = description;
     this.ability = ability;
     this.active = false;
@@ -214,12 +215,12 @@ export const RELICS = [
     },
   }),
   new Relic({
-    id: "thermonuclear",
-    name: "Thermonuclear",
+    id: "thermonuclear_bomb",
+    name: "Thermonuclear Bomb",
     sprite: "assets/relics/unique_thermonuclear-Sheet-export.png",
     spriteFrames: 10,
     rarity: "UNIQUE",
-    description: "When used, activates a nuke that clears the bottom 3 rows of the board but grants no score.",
+    description: "Once per level, use your relic key to clear the bottom 3 lines and drop everything down.",
     ability(game) {
       game.thermonuclearActive = this.active;
     },

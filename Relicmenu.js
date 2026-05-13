@@ -5,7 +5,7 @@ export class RelicMenu {
     this.totalPoints = totalPoints;
     this.scrollY = 0;
     this.animTimer = 0;
-    // Sidebar bounds — recalculated each draw()
+    // Sidebar bounds - recalculated each draw()
     this.sidebarX = 0;
     this.sidebarY = 0;
     this.sidebarW = 0;
@@ -90,7 +90,7 @@ export class RelicMenu {
   recalcBounds() {
    const RELIC_W = 220;
    const cardCount = this.relics ? this.relics.length : 0;
-   const needed = this.HEADER_H + cardCount * (this.CARD_H + this.CARD_GAP_Y)
+   const needed = this.HEADER_H + cardCount * (this.CARD_H + this.CARD_GAP_Y + 10)
                   + this.FOOTER_H + 24;
    this.sidebarW = RELIC_W;
    this.sidebarH = constrain(needed, 250, height - this.TOPBAR_H - 16);
@@ -102,7 +102,7 @@ export class RelicMenu {
   drawSidebar() {
    const { sidebarX: sx, sidebarY: sy, sidebarW: sw, sidebarH: sh } = this;
 
-    //Card background + border + corners
+  //Card background + border + corners
    noStroke();
    fill(...this.C.sidebarBg);
    rect(sx, sy, sw, sh, 4);
@@ -115,14 +115,14 @@ export class RelicMenu {
    const S = 9;
    stroke(...this.C.gold, 100);
    strokeWeight(1.5);
-   line(sx + 2,      sy + 2,     sx + 2 + S, sy + 2    );
-   line(sx + 2,      sy + 2,     sx + 2,     sy + 2 + S);
-   line(sx + sw - 2 - S, sy + 2, sx + sw - 2, sy + 2    );
-   line(sx + sw - 2,     sy + 2, sx + sw - 2, sy + 2 + S);
-   line(sx + 2,      sy + sh - 2, sx + 2 + S, sy + sh - 2    );
-   line(sx + 2,      sy + sh - 2, sx + 2,     sy + sh - 2 - S);
-   line(sx + sw - 2 - S, sy + sh - 2, sx + sw - 2, sy + sh - 2    );
-   line(sx + sw - 2,     sy + sh - 2, sx + sw - 2, sy + sh - 2 - S);
+   line(sx + 2, sy + 2, sx + 2 + S, sy + 2);
+   line(sx + 2, sy + 2, sx + 2, sy + 2 + S);
+   line(sx + sw - 2 - S, sy + 2, sx + sw - 2, sy + 2 );
+   line(sx + sw - 2, sy + 2, sx + sw - 2, sy + 2 + S);
+   line(sx + 2, sy + sh - 2, sx + 2 + S, sy + sh - 2);
+   line(sx + 2, sy + sh - 2, sx + 2, sy + sh - 2 - S);
+   line(sx + sw - 2 - S, sy + sh - 2, sx + sw - 2, sy + sh - 2);
+   line(sx + sw - 2, sy + sh - 2, sx + sw - 2, sy + sh - 2 - S);
 
     //Glowing left border pulse
    const pulse = 0.55 + sin(this.animTimer) * 0.2;
@@ -271,13 +271,13 @@ export class RelicMenu {
    text('RECOLLECTION', sx + 14, fy + 10);
    drawingContext.letterSpacing = '0px';
 
-   const used   = this.activeCount();
-   const total  = this.totalPoints;
+   const used = this.activeCount();
+   const total = this.totalPoints;
    const pipMax = max(total, used);
    const pipSize = 8, pipGap = 12;
-   const pipsW  = pipMax * pipGap - (pipGap - pipSize);
-   const pipX0  = sx + sw / 2 - pipsW / 2;
-   const pipY   = fy + 34;
+   const pipsW = pipMax * pipGap - (pipGap - pipSize);
+   const pipX0 = sx + sw / 2 - pipsW / 2;
+   const pipY = fy + 34;
 
    for (let i = 0; i < pipMax; i++) {
      const ppx = pipX0 + i * pipGap;

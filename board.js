@@ -18,6 +18,7 @@ let originX, originY;
 let board = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
 let activePiece = null;
 let nextType = null;
+let pieceQueue = [];
 let score = 0;
 let totalScore = 0;
 let scoreRequirement = 500;
@@ -81,6 +82,8 @@ let binds = [
   {action:'Hard Drop', key:' '},
   {action:'Rotate', key:'W'},
   {action:'Hold Piece', key:'C'},
+  {action:'Use Active Relic 1', key:'E'},
+  {action:'Use Active Relic 2', key:'Q'},
   {action:'Pause', key:'P'},
 ];
 let keyMap = {};
@@ -121,7 +124,9 @@ let bubbleUpActive = false;
 let letsGoGamblingActive = false;
 let letsGoGamblingBonus = 0.2;
 let thermonuclearActive = false;
+let thermonuclearUsed = false;
 let duplicatorActive = false;
+let duplicatorUsed = false;
 //not implemented
 let doubleHoldActive = false;
 // til here
@@ -161,6 +166,25 @@ const game = {
     turboBoosterActive,
     doubleHoldActive,
     scoreAdd,
+}
+//bomb relic
+function useThermonuclearBomb() {
+    if (!thermonuclearActive || thermonuclearUsed || gameOver || paused) return;
+
+    for (let i = 0; i < 3; i++) {
+        board.pop();
+        board.unshift(Array(COLS).fill(null));
+    }
+
+    thermonuclearUsed = true;
+}
+
+function useDuplicator() {
+    if (!duplicatorActive || duplicatorUsed || gameOver || paused || !activePiece) return;
+
+    nextType = activePiece.type;
+
+    duplicatorUsed = true;
 }
 //Game Theme
 const THEME = {
@@ -703,6 +727,7 @@ function updateLevel() {
         scoreIncrement *= scoreFactor;
         scoreFactor *= 2;
         recollection++;
+        relicMenu.totalPoints = recollection;
         stage++
         dropInterval = Math.max(80, BASE_DROP_INTERVAL - (stage - 1) * 100);
     } else {
@@ -991,7 +1016,7 @@ function drawLeftPanel() {
   textAlign(LEFT, TOP);
   fill(...THEME.textBright);
   text(typeof score !== 'undefined' ? score : 0, px + 12, cy);
-  textSize(12);
+  textSize(20);
   fill(...THEME.textDim);
   textAlign(RIGHT, TOP);
   text(`/ ${typeof scoreRequirement !== 'undefined' ? scoreRequirement : 750}`, px + pw - 12, cy + 8);
@@ -1009,41 +1034,6 @@ function drawLeftPanel() {
   cy += 16;
   drawDividerLine(px + 10, cy, px + pw - 10);
   cy += 10;
-  //Recollection
-  drawSectionLabel('RECOLLECTION', px + 12, cy);
-  cy += 13;
-  const recUsed = typeof recollectionUsed !== 'undefined' ? recollectionUsed : 0;
-  const recTotal = typeof recollection !== 'undefined' ? recollection : 5;
-  noStroke();
-  textFont('monospace');
-  textSize(13);
-  textAlign(LEFT, TOP);
-  fill(...THEME.textBright);
-  text(`${recUsed} / ${recTotal}`, px + 12, cy);
-  cy += 18;
- 
-  //pips
-  const pipSize = 8, pipGap = 12;
-  const pipMax = max(recTotal, recUsed);
-  const pipsW = pipMax * pipGap - (pipGap - pipSize);
-  const pipX0 = px + pw / 2 - pipsW / 2;
-  for (let i = 0; i < pipMax; i++) {
-    const ppx = pipX0 + i * pipGap;
-    if (i < recUsed) {
-      drawingContext.shadowBlur = 6;
-      drawingContext.shadowColor = 'rgba(0,195,55,0.7)';
-      fill(...THEME.green);
-    } else if (i < recTotal) {
-      drawingContext.shadowBlur = 0;
-      fill(...THEME.panelBorder);
-    } else {
-      drawingContext.shadowBlur = 0;
-      fill(...THEME.red);
-    }
-    noStroke();
-    circle(ppx, cy + pipSize / 2, pipSize);
-  }
-  drawingContext.shadowBlur = 0;
 }
 
 //temp game over screen til we have a ui/screen built for it
@@ -1663,6 +1653,13 @@ window.keyPressed = function() {
         case "Hold Piece" :
             holdPiece();
             break;
+        case "Use Active Relic 1":
+            useActiveRelic(0);
+            break;
+
+        case "Use Active Relic 2":
+            useActiveRelic(1);
+            break;
     }
 }
 
@@ -1706,6 +1703,25 @@ window.mouseWheel = function(event) {
     }
     return relicMenu.mouseWheel(event);
 }
+//active item helpers
+function getActiveRelicsHeld() {
+    return relicsHeld.filter(relic =>
+        relic.id === "thermonuclear_bomb" ||
+        relic.id === "duplicator"
+    );
+}
+function useActiveRelic(index) {
+    const activeRelics = getActiveRelicsHeld();
+    const relic = activeRelics[index];
+
+    if (!relic) return;
+
+    if (relic.id === "thermonuclear_bomb") {
+        useThermonuclearBomb();
+    } else if (relic.id === "duplicator") {
+        useDuplicator();
+    }
+}
 // restarts the game
 function resetGame() {
     board = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
@@ -1724,6 +1740,8 @@ function resetGame() {
     gameOver = false;
     paused = false;
     pauseSettingsOpen = false;
+    thermonuclearUsed = false;
+    duplicatorUsed = false;
     holdType = null;
     holdType2 = null;
     holdUsed = false;
@@ -1764,6 +1782,8 @@ function softReset() {
     score = 0;
     numLockedPieces = 0;
     holdType = null;
+    thermonuclearUsed = false;
+    duplicatorUsed = false;
     holdUsed = false;
     leftHeld = false;
     rightHeld = false;
@@ -1920,17 +1940,14 @@ function drawTopBar() {
  
   const midY = TOPBAR_H / 2;
  
-  // ── ✦ Relics (left) ─────────────────────────
   noStroke();
   fill(...THEME.gold);
   textFont('Georgia');
   textStyle(ITALIC);
   textSize(16);
   textAlign(LEFT, CENTER);
-  text('✦  Relics', 18, midY);
+  text('✦  Relicquae', 18, midY);
   textStyle(NORMAL);
- 
-  // ── ✦ STAGE N ✦ pill (center) ───────────────
   const stageStr = `✦  STAGE ${stage}  ✦`;
   textFont('Georgia');
   textSize(14);
@@ -1946,26 +1963,6 @@ function drawTopBar() {
   noStroke();
   fill(...THEME.gold);
   text(stageStr, width / 2, midY);
- 
-  const rpUsed = (relicMenu) ? relicMenu.activeCount() : 0;
-  const rpTotal = (relicMenu) ? relicMenu.totalPoints : 5;
-  textFont('Georgia');
-  textSize(14);
-  fill(rpUsed > rpTotal ? color(...THEME.red) : color(...THEME.textMid));
-  textAlign(RIGHT, CENTER);
-  const fullRpStr = `${rpUsed} / ${rpTotal} RP`;
-  //Split at the space before RP
-  const rpNumPart = `${rpUsed} / `;
-  const rpTagPart = `${rpTotal} RP`;
-  // measure to position
-  const rpTagW = textWidth(rpTagPart);
-  const btnRightEdge = width - 56;
-  fill(...THEME.textMid);
-  textAlign(RIGHT, CENTER);
-  text(rpNumPart + rpTagPart, btnRightEdge, midY);
-  fill(...THEME.gold);
-  textAlign(RIGHT, CENTER);
-  text(rpTagPart, btnRightEdge, midY);
  
   const btnW = 36, btnH = 28;
   const btnX = width - btnW - 10;
