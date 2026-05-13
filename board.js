@@ -9,7 +9,7 @@ const BOX_SIZE = 32;
 const BOARD_W = COLS * BOX_SIZE;
 const BOARD_H = ROWS * BOX_SIZE;
 const PIECE_TYPES = ["4Line", "L", "BackL", "T", "S", "Z", "2by2"];
-const POINTS = [0, 100, 300, 500, 700, 900, 1200, 1500];
+const POINTS = [0, 100, 300, 500, 700, 1000, 1200, 1500];
 const SPRITES = {};
 const DEFAULT_RECOLLECTION = 5;
 const LIMITED_VISION_RADIUS = 200;
@@ -108,7 +108,14 @@ let towerBuilderActive = false;
 let towerBuilderBonus = 1.4;
 let swanSongActive = false;
 let swanSongBonus = 2.5;
+let piggyBankActive = false;
+let piggyBankBonus = 10;
+let piggyBankStored = 0;
 let stackMasterActive = false;
+let stackMasterBonus = 0.01;
+let hotStreakActive = false;
+let hotStreakBonus = 0.01;
+let hotStreakStreak = 0;
 let extraFirepowerActive = false;
 let bubbleUpActive = false;
 let letsGoGamblingActive = false;
@@ -145,6 +152,8 @@ const game = {
     cleanerActive,
     comboLineActive,
     towerBuilderActive,
+    piggyBankActive,
+    hotStreakActive,
     swanSongActive,
     stackMasterActive,
     extraFirepowerActive,
@@ -203,6 +212,8 @@ function applyRelics() {
     game.comboLineActive = false;
     game.cleanerActive = false;
     game.towerBuilderActive = false;
+    game.piggyBankActive = false;
+    game.hotStreakActive = false;
     game.swanSongActive = false;
     game.stackMasterActive = false;
     game.bubbleUpActive = false;
@@ -224,6 +235,8 @@ function applyRelics() {
     scoreMultiActive = game.scoreMultiActive;
     comboLineActive = game.comboLineActive;
     towerBuilderActive = game.towerBuilderActive;
+    piggyBankActive = game.piggyBankActive;
+    hotStreakActive = game.hotStreakActive;
     swanSongActive = game.swanSongActive;
     stackMasterActive = game.stackMasterActive;
     bubbleUpActive = game.bubbleUpActive;
@@ -540,32 +553,56 @@ function updateScore(cleared) {
     linesCleared += cleared;
     let baseScore = POINTS[cleared] || 0;
     let scoreMulti = 1;
+    let bonusesUsed = [];
     
     // Base Score calculations
 
     // Sqr squared relic
-    if(sqrBonusActive) baseScore += sqrBonus; 
+    if(sqrBonusActive) {
+        baseScore += sqrBonus; 
+        bonusesUsed.push("Sqr Bonus");
+    }
+
     // Spin 2 Win relic
     if (spin2WinActive && currentPieceRotations > 0) {
         baseScore += 1 * currentPieceRotations;
+        bonusesUsed.push("Spin 2 Win Bonus");
     }
+
+    // Piggy Bank relic
+    if (piggyBankActive && cleared > 0) {
+        baseScore += piggyBankStored;
+        piggyBankStored = 0;
+        bonusesUsed.push("Piggy Bank Bonus");
+    } else if (piggyBankActive) {
+        piggyBankStored += piggyBankBonus;
+    }
+
     // Score Multi Calculations
 
     // Cleaner Relic
     if (cleanerActive && cleared > 0 && board.every(row => row.every(cell => cell === null))) {
         scoreMulti += cleanerBonus;
+        bonusesUsed.push("Cleaner Bonus");
     }
     // Multi Score relic
     if(scoreMultiActive) {
         scoreMulti += scoreMultiBonus * linesCleared;
+        bonusesUsed.push("Score Multi Bonus");
     }
+
     // Rock Bottom relic
-    if(rockBottomActive && isTowerBelow15Percent()) scoreMulti += rockBottomBonus;
+    if(rockBottomActive && isTowerBelow15Percent()) {
+        scoreMulti += rockBottomBonus;
+        bonusesUsed.push("Rock Bottom Bonus");
+    }
+
     // Combo Line relic
     if (comboLineActive) {
         if (cleared > 0) {
             comboStreak++;
             scoreMulti += comboLineBonus * comboStreak;
+            bonusesUsed.push("Combo Line Bonus x" + comboStreak);
         } else {
             comboStreak = 0;
         }
@@ -573,22 +610,38 @@ function updateScore(cleared) {
     // Turbo Booster relic
     if (turboBoosterActive && lastMoveWasHardDrop && cleared > 0) {
         scoreMulti += turboBoosterBonus;
+        bonusesUsed.push("Turbo Booster Bonus");
     }
 
     //Swan Song relic
     if (swanSongActive && pieceBag - numLockedPieces <= 0) {
         scoreMulti *= swanSongBonus;
+        bonusesUsed.push("Swan Song Bonus");
     }
     // Tower Builder relic
     if (towerBuilderActive && cleared > 0 && topClearedRow < 8) {
         scoreMulti *= towerBuilderBonus;
+        bonusesUsed.push("Tower Builder Bonus");
     }
     // Stack Master relic
     if (stackMasterActive) {
-        scoreMulti *= 1 + (0.005 * howManyTilesAbove50Percent());
+        scoreMulti *= 1 + (stackMasterBonus * howManyTilesAbove50Percent());
+        bonusesUsed.push("Stack Master Bonus");
     }
-    
+
+    // Hot Streak relic
+    if (hotStreakActive) {
+        if (!isTowerAbove50Percent()) {
+            scoreMulti += hotStreakBonus * hotStreakStreak;
+            hotStreakStreak += 1;
+            bonusesUsed.push("Hot Streak Bonus x" + hotStreakStreak);
+        } else {
+            hotStreakStreak = 0;
+        }
+    }
+
     score += baseScore * scoreMulti;
+    console.log(`Cleared: ${cleared}, Base Score: ${baseScore}, Score Multi: ${scoreMulti.toFixed(2)}, Bonuses: ${bonusesUsed.join(", ")}`);
     if (score >= scoreRequirement) {
         updateLevel();
     }
@@ -605,15 +658,26 @@ function isTowerAbove60Percent() {
     return false;
 }
 
-function isTowerBelow15Percent() {
-    const limitRow = Math.floor(ROWS * 0.85);
+function isTowerAbove50Percent() {
+    const limitRow = Math.floor(ROWS * 0.5);
 
-    for (let r = limitRow; r < ROWS; r++) {
+    for (let r = 0; r < limitRow; r++) {
         if (board[r].some(cell => cell !== null)) {
             return true;
         }
     }
     return false;
+}
+
+function isTowerBelow15Percent() {
+    const limitRow = ROWS - 3;
+
+    for (let r = 0; r < limitRow; r++) {
+        if (board[r].some(cell => cell !== null)) {
+            return false;
+        }
+    }
+    return true;
 }
 
 function howManyTilesAbove50Percent() {
