@@ -1,9 +1,9 @@
 export const RARITY = Object.freeze({
-  COMMON: {label: "Common", color: "#42b3e4", spawnWeight: 20},
-  RARE: {label: "Rare", color: "#df7126", spawnWeight: 10},
+  COMMON: {label: "Common", color: "#42b3e4", spawnWeight: 8},
+  RARE: {label: "Rare", color: "#df7126", spawnWeight: 7},
   EPIC: {label: "Epic", color: "#8a3194", spawnWeight:  5},
-  LEGENDARY: {label: "Legendary", color: "#cf1313", spawnWeight: 3},
-  UNIQUE: {label: "Unique", color: "#fb5ae0", spawnWeight: 2}
+  LEGENDARY: {label: "Legendary", color: "#cf1313", spawnWeight: 4},
+  UNIQUE: {label: "Unique", color: "#fb5ae0", spawnWeight: 4}
 });
 
 
@@ -118,7 +118,7 @@ export const RELICS = [
     name: "Tower Builder",
     sprite: "assets/relics/rare_towerbuilder.png",
     rarity: "RARE",
-    description: "Lines clears with at least one line in the top 8 rows grant 40% more score multi.",
+    description: "Line clears with at least one line in the top 8 rows grant 40% more score multi.",
     ability(game) {
       game.towerBuilderActive = this.active;
     },
