@@ -144,6 +144,12 @@ let topClearedRow = ROWS;
 
 let song;
 
+let boomRelicSfx;
+let duplicateRelicSfx;
+let gameOverSfx;
+let lineClearSfx;
+let slamSfx;
+
 
 const HORIZONTAL_REPEAT_DELAY = 140;
 const HORIZONTAL_REPEAT_INTERVAL = 55;
@@ -186,7 +192,7 @@ function useThermonuclearBomb() {
         board.pop();
         board.unshift(Array(COLS).fill(null));
     }
-
+    playSfx(boomRelicSfx);
     thermonuclearUsed = true;
 }
 
@@ -194,7 +200,8 @@ function useDuplicator() {
     if (!duplicatorActive || duplicatorUsed || gameOver || paused || !activePiece) return;
 
     nextType = activePiece.type;
-
+    playSfx(duplicateRelicSfx);
+    
     duplicatorUsed = true;
 }
 //Game Theme
@@ -235,6 +242,24 @@ if (song) {
       sound.setVolume(sfxVolume);
     });
   }
+}
+//sfx
+function playSfx(sound) {
+  if (!sound) return;
+
+  userStartAudio();
+
+  const sfxVolume =
+    (audioSettings.master / 100) *
+    (audioSettings.sfx / 100);
+
+  sound.setVolume(sfxVolume);
+
+  if (sound.isPlaying()) {
+    sound.stop();
+  }
+
+  sound.play();
 }
 
 window.setup = async function() {
@@ -337,6 +362,19 @@ window.draw = function() {
 window.preload = function() {
   preloadRelicSprites();
   song = loadSound('assets/audio/finalauidoowen.m4a');
+boomRelicSfx = loadSound('assets/audio/Boom_Relic.wav');
+  duplicateRelicSfx = loadSound('assets/audio/Duplicate_Relic.wav');
+  gameOverSfx = loadSound('assets/audio/Game_Over.wav');
+  lineClearSfx = loadSound('assets/audio/Line_Clear.wav');
+  slamSfx = loadSound('assets/audio/Slam.wav');
+
+  window.gameSounds = [
+    boomRelicSfx,
+    duplicateRelicSfx,
+    gameOverSfx,
+    lineClearSfx,
+    slamSfx
+  ];
 }
 
 function beginStageIntro(nextState) {
@@ -413,6 +451,7 @@ function spawnPieceOfType(type) {
     const startY = originY;
     const piece = new Piece(startX, startY, type, BOX_SIZE);
     if (collidesWithBoard(piece)) {
+        playSfx(gameOverSfx);
         gameOver = true;
         song.stop();
         submitFinalScore();
@@ -513,7 +552,13 @@ function lockPiece() {
             board[row][col] = {color : activePiece.color};
 
     });
-    updateScore(clearLines());
+    const cleared = clearLines();
+
+    if (cleared > 0) {
+        playSfx(lineClearSfx);
+    }
+
+    updateScore(cleared);
     //spin2win relic
     currentPieceRotations = 0;
     //turbo_booster relic
@@ -522,6 +567,7 @@ function lockPiece() {
     numLockedPieces++;
     //check if numLockedPieces is less than the bag.
     if (numLockedPieces >= pieceBag) {
+        playSfx(gameOverSfx);
         gameOver = true;
         song.stop();
         submitFinalScore();
@@ -1692,6 +1738,7 @@ window.keyPressed = function() {
             let dropped = 0;
             while (tryMove(activePiece, 0, BOX_SIZE)) dropped++;
             score += dropped * 2;
+            playSfx(slamSfx);
             //turbo_booster relic
             lastMoveWasHardDrop = true;
             lockPiece();

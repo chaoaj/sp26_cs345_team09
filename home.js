@@ -95,11 +95,13 @@ let leaderboardProgress = 0;
 let leaderboardData = [];
 let leaderboardLoading = false;
 let leaderboardScrollY = 0;
+let menuClickSfx;
 
 window.preload = function () {
   logoImg = loadImage('assets/logo.png', () => {}, () => { logoImg = null; });
   titleImg = loadImage('assets/Relicquae.png', () => {}, () => { titleImg = null; });
   bgImage = loadImage('assets/background.png', () => {}, () => { bgImage = null; });
+  menuClickSfx = loadSound('assets/audio/Menu_Click.wav');
 }
 
 window.setup =  async function () {
@@ -768,8 +770,11 @@ window.mouseWheel = function (event) {
 }
 
 function handleRegionClick(r) {
+  playMenuClick();
   if (r.id === 'start') {
-    window.location.href = 'gamePage.html';
+      setTimeout(() => {
+      window.location.href = 'gamePage.html';
+    }, 120);
   } else if (r.id === 'settings') {
     leaderboardOpen = false;
     modalOpen = true;
@@ -846,6 +851,20 @@ function saveAudioSettings() {
   localStorage.setItem('rq_audio', JSON.stringify(audioSettings));
 
   applyAudioSettings();
+}
+
+function playMenuClick() {
+  if (!menuClickSfx) return;
+
+  userStartAudio()
+
+  const volume =
+    (audioSettings.master / 100) *
+    (audioSettings.sfx / 100);
+
+  menuClickSfx.setVolume(volume);
+  menuClickSfx.stop();
+  menuClickSfx.play();
 }
 
 function applyAudioSettings() {
