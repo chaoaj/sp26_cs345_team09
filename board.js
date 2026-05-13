@@ -1077,7 +1077,7 @@ function drawLeftPanel() {
   drawSectionLabel('SCORE', px + 12, cy);
   cy += 13;
   drawStatRow('CURRENT', typeof score !== 'undefined' 
-    ? score : 0, px, cy, pw);
+    ? Math.round(score) : 0, px, cy, pw);
   cy += 19;
   drawStatRow('TOTAL', typeof totalScore !== 'undefined' 
     ? Math.trunc(totalScore) : 0, px, cy, pw); 
@@ -1092,7 +1092,7 @@ function drawLeftPanel() {
   textSize(22);
   textAlign(LEFT, TOP);
   fill(...THEME.textBright);
-  text(typeof score !== 'undefined' ? score : 0, px + 12, cy);
+  text(typeof score !== 'undefined' ? Math.round(score) : 0, px + 12, cy);
   textSize(20);
   fill(...THEME.textDim);
   textAlign(RIGHT, TOP);
