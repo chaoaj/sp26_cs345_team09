@@ -23,6 +23,7 @@ class Relic {
     this.sprite = sprite;
     this.rarity = RARITY[rarity];
     this.rarityKey = rarity;
+    this.level = 1;
     this.description = description;
     this.ability = ability;
     this.active = false;
