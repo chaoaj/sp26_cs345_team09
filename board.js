@@ -2,6 +2,7 @@ import { initFirebase, submitScore, loadLeaderboard } from './firebase.js';
 import { initShop, drawShop, shopMouseMoved, shopMouseClicked, shopKeyPressed, preloadRelicSprites } from './shop.js';
 import {BOSSES} from './boss.js';
 import { RelicMenu } from './Relicmenu.js'
+import { RELICS } from './relic.js';
 
 const ROWS = 20;
 const COLS = 10;
@@ -46,6 +47,7 @@ let recollection = DEFAULT_RECOLLECTION;
 let recollectionUsed = 0;
 let currentBoss = false;
 export let relicsHeld = [];
+const relicsMap = Object.fromEntries(RELICS.map(relic => [relic.id, relic]));
 
 // gameState will tell the program what should be rendered and processed
 // valid states: menu, standard, boss, shop, stageIntro
@@ -415,6 +417,7 @@ function handleHeldInput() {
 }
 
 function canMove(piece, x, y) {
+    if(!piece)return;
     piece.move(x, y);
     const blocked = collidesWithBoard(piece) || outOfBounds(piece);
     piece.move(-x, -y);
@@ -568,48 +571,49 @@ function updateScore(cleared) {
     // Base Score calculations
 
     // Sqr squared relic
-    if(sqrBonusActive) baseScore += sqrBonus; 
+    if(sqrBonusActive) baseScore += sqrBonus * (1 + (relicsMap['square^2'].level - 1) * 0.5);
     // Spin 2 Win relic
     if (spin2WinActive && currentPieceRotations > 0) {
-        baseScore += 1 * currentPieceRotations;
+        baseScore += 1 * currentPieceRotations * (1 + (relicsMap['spin_2_win'].level - 1) * 0.5);
     }
     // Score Multi Calculations
 
     // Cleaner Relic
     if (cleanerActive && cleared > 0 && board.every(row => row.every(cell => cell === null))) {
-        scoreMulti += cleanerBonus;
+        scoreMulti += cleanerBonus * (1 + (relicsMap['cleaner'].level - 1) * 0.5);
     }
     // Multi Score relic
     if(scoreMultiActive) {
-        scoreMulti += scoreMultiBonus * linesCleared;
+        scoreMulti += scoreMultiBonus * linesCleared * (1 + (relicsMap['score_multi'].level - 1) * 0.2);
     }
     // Rock Bottom relic
-    if(rockBottomActive && isTowerBelow15Percent()) scoreMulti += rockBottomBonus;
+    if(rockBottomActive && isTowerBelow15Percent()) 
+        scoreMulti += rockBottomBonus * (1 + (relicsMap['rock_bottom'].level - 1) * 0.5);
     // Combo Line relic
     if (comboLineActive) {
         if (cleared > 0) {
             comboStreak++;
-            scoreMulti += comboLineBonus * comboStreak;
+            scoreMulti += comboLineBonus * comboStreak * (1 + (relicsMap['combo_line'].level - 1) * 0.5);
         } else {
             comboStreak = 0;
         }
     }
     // Turbo Booster relic
     if (turboBoosterActive && lastMoveWasHardDrop && cleared > 0) {
-        scoreMulti += turboBoosterBonus;
+        scoreMulti += turboBoosterBonus * (1 + (relicsMap['turbo_booster'].level - 1) * 0.5);
     }
 
     //Swan Song relic
     if (swanSongActive && pieceBag - numLockedPieces <= 0) {
-        scoreMulti *= swanSongBonus;
+        scoreMulti *= swanSongBonus * (1 + (relicsMap['swan_song'].level - 1) * 0.5);
     }
     // Tower Builder relic
     if (towerBuilderActive && cleared > 0 && topClearedRow < 8) {
-        scoreMulti *= towerBuilderBonus;
+        scoreMulti *= towerBuilderBonus * (1 + (relicsMap['tower_builder'].level - 1) * 0.5);
     }
     // Stack Master relic
     if (stackMasterActive) {
-        scoreMulti *= 1 + (0.005 * howManyTilesAbove50Percent());
+        scoreMulti *= 1 + (0.005 * howManyTilesAbove50Percent()) * (1 + (relicsMap['stack_master'].level - 1) * 0.5);
     }
     
     score += baseScore * scoreMulti;
@@ -1673,6 +1677,7 @@ function resetGame() {
     relicsHeld = [];
     recollection = DEFAULT_RECOLLECTION;
     dropInterval = BASE_DROP_INTERVAL;
+    doubleHoldActive = false;
     gameOver = false;
     paused = false;
     pauseSettingsOpen = false;
@@ -1718,6 +1723,7 @@ function softReset() {
     score = 0;
     numLockedPieces = 0;
     holdType = null;
+    doubleHoldActive = false;
     thermonuclearUsed = false;
     duplicatorUsed = false;
     holdUsed = false;

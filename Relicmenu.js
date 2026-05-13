@@ -228,15 +228,42 @@ export class RelicMenu {
         imageMode(CORNER);
     }
     //relic name
-    const nameY = cy + ch / 2;
+    const nameX = cx + 50;
+    const nameY = cy + ch / 2 - 7;
     textFont('Georgia');
     textStyle(isActive ? BOLD : NORMAL);
     textSize(13);
     textAlign(LEFT, CENTER);
     noStroke();
     fill(isActive ? color(...this.C.nameActive) : color(...this.C.nameInactive));
-    text(relic.name, cx + 50, nameY);
+    text(relic.name, nameX, nameY);
     textStyle(NORMAL);
+
+    // Stars based on relic level
+    const level = relic.level || 0;
+    const maxStars = 5;
+    const starSize = 7;
+    const starGap = 9;
+    const starsY = cy + ch / 2 + 9;
+    textFont('monospace');
+    textSize(starSize + 1);
+    textAlign(LEFT, CENTER);
+    for (let s = 0; s < maxStars; s++) {
+      const starX = nameX + s * starGap;
+      if (s < level) {
+        // Filled star - gold if active, muted if inactive
+        fill(isActive
+          ? color(...this.C.gold, 230 + pulse * 25)
+          : color(110, 90, 40, 180)
+        );
+      } else {
+        // Empty star slot
+        fill(isActive ? color(40, 70, 45, 160) : color(30, 50, 32, 120));
+      }
+      noStroke();
+      text('★', starX, starsY);
+    }
+
     // Status (bottom right)
     textFont('monospace');
     textSize(12);
