@@ -274,28 +274,28 @@ function drawLogoArea() {
   drawingContext.fill();
   pop();
 
-  if (logoImg) {
-    const sz = min(130, width * 0.2);
-    push();
-    drawingContext.shadowBlur = 24;
-    drawingContext.shadowColor = 'rgba(61,219,82,0.65)';
-    image(logoImg, cx - sz / 2, logoY - sz / 2, sz, sz);
-    pop();
-  } else {
-    //fallback since we don't have logo rn
-    push();
-    noFill();
-    stroke(C.greenGlow);
-    strokeWeight(2);
-    circle(cx, logoY, 110);
-    pop();
-  }
+  // if (logoImg) {
+  //   const sz = min(130, width * 0.2);
+  //   push();
+  //   drawingContext.shadowBlur = 24;
+  //   drawingContext.shadowColor = 'rgba(61,219,82,0.65)';
+  //   image(logoImg, cx - sz / 2, logoY - sz / 2, sz, sz);
+  //   pop();
+  // } else {
+  //   //fallback since we don't have logo rn
+  //   push();
+  //   noFill();
+  //   stroke(C.greenGlow);
+  //   strokeWeight(2);
+  //   circle(cx, logoY, 110);
+  //   pop();
+  // }
   if (titleImg) {
     const titleW = min(400, width * 0.52);
     const titleH = titleW * (titleImg.height / titleImg.width);
     push();
     drawingContext.shadowBlur = map(shine, -1, 1, 14, 36);
-    drawingContext.shadowColor = 'rgba(10, 92, 29, 0.8)';
+    drawingContext.shadowColor = 'rgba(232,160,32,0.8)';
     drawingContext.globalAlpha = map(shine, -1, 1, 0.75, 1.0);
     image(titleImg, cx - titleW / 2, titleY - titleH / 2, titleW, titleH);
     pop();
