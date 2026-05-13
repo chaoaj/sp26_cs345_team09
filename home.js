@@ -538,7 +538,50 @@ function drawSettingsBody(x, y, w, h) {
     drawAudioPanel(x + pad, y + 8, w - pad * 2);
   } else if (settingsTab === 'keybinds') {
     drawKeybindsPanel(x + pad, y + 8, w - pad * 2, h - 16);
+  } else {
+    drawCreditsPanel(x + pad, y + 8, w - pad * 2);
   }
+}
+
+function drawCreditsPanel(x, y, w) {
+  push();
+
+  fill(C.goldLight);
+  noStroke();
+  drawingContext.letterSpacing = '0.18em';
+  textFont("'Cinzel Decorative', serif");
+  textSize(16);
+  textStyle(BOLD);
+  textAlign(LEFT, TOP);
+  text('Credits', x, y);
+
+
+  fill(C.textDim);
+  drawingContext.letterSpacing = '0.06em';
+  textFont("'Cinzel', serif");
+  textSize(10);
+  textStyle(ITALIC);
+  text('Created by the Reliquae development team', x, y + 32);
+
+
+  const credits = [
+    'Conall Perry — Gameplay, UI',
+    'Owen Johnson — Gameplay, Features',
+    'James Dews — Art and assets, Gameplay',
+    'Carter Housh  — Bosses, Gameplay',
+    'Jaden Kim — Recollection system, Gameplay',
+    'Johann Serbia — Music and Auido designed'
+  ];
+
+  textStyle(NORMAL);
+  textSize(11);
+  drawingContext.letterSpacing = '0.04em';
+  fill(C.text);
+  credits.forEach((line, i) => {
+    text(line, x, y + 70 + i * 28);
+  });
+
+  pop();
 }
 
 //audio settings
