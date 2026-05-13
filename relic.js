@@ -27,6 +27,7 @@ class Relic {
     this.level = 1;
     this.ability = ability;
     this.active = false;
+    this.animated = false;
     this.spriteFrames = spriteFrames;
   }
 

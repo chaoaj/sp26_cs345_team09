@@ -19,6 +19,9 @@ export class RelicMenu {
     this.CONTENT_PAD = 12;
     this.SCROLLBAR_W = 5;
     this.TOPBAR_H = 52;
+    this.ANIM_INTERVAL = 1000 / 10; // 10 FPS for animated relics
+    this.spriteCache = {};
+    this.animState = {};
 
     // Hover state
     this.hoverRelicIndex = -1;
@@ -188,6 +191,7 @@ export class RelicMenu {
   }
 
   drawRelicCard(relic, index, cx, cy, cw) {
+    const iconSize = 32;
     const ch = this.CARD_H;
     const isActive = relic.active;
     const isHover = this.hoverRelicIndex === index;
@@ -215,7 +219,24 @@ export class RelicMenu {
     circle(iconX, iconY, 38);
     if (relic.sprite && !relic.spriteImg && !relic.spriteLoading) {
         relic.spriteLoading = true;
-        loadImage(relic.sprite, img => {
+        let img;
+        if(relic.rarity.label == 'Legendary' || relic.rarity.label == 'Unique') {
+          img = loadImage(
+            relic.sprite,
+            () => {
+              this.spriteCache[relic.id] = {
+                image: img,
+                animated: (relic.spriteFrames ?? 1) > 1,
+                frames: relic.spriteFrames ?? 1, 
+                frameW: 64,
+                frameH: 64,
+              };
+              relic.animated = true;
+            },
+        () => { delete this.spriteCache[relic.id]; }
+      );
+        } else
+        img = loadImage(relic.sprite, img => {
             relic.spriteImg = img;
             relic.spriteLoading = false;
         });
@@ -226,6 +247,36 @@ export class RelicMenu {
         image(relic.spriteImg, iconX, iconY, 32, 32);
         noTint();
         imageMode(CORNER);
+    } else if (relic.animated) {
+      imageMode(CENTER);
+      const cached = this.spriteCache[relic.id];
+      noSmooth();
+
+      // figure out which frame to show
+      let frameX = 0;
+      if (cached.animated) {
+        if (!this.animState[relic.id]) {
+          this.animState[relic.id] = { frame: 0, lastTick: millis() };
+        }
+        const state = this.animState[relic.id];
+        if (millis() - state.lastTick > this.ANIM_INTERVAL) {
+          state.frame = (state.frame + 1) % cached.frames;
+          state.lastTick = millis();
+        }
+        frameX = state.frame * cached.frameW;
+      } else {
+        if (this.animState[relic.id]) this.animState[relic.id].frame = 0; // reset on unhover
+        frameX = 0;
+      }
+
+      // same draw call for both animated and static
+      image(
+        cached.image,
+        iconX, iconY, iconSize, iconSize,
+        frameX, 0, cached.frameW, cached.frameH
+      );
+
+      smooth();
     }
     //relic name
     const nameX = cx + 50;
