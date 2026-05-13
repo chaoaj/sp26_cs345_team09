@@ -364,7 +364,7 @@ window.draw = function() {
 window.preload = function() {
   preloadRelicSprites();
   song = loadSound('assets/audio/finalauidoowen.m4a');
-boomRelicSfx = loadSound('assets/audio/Boom_Relic.wav');
+  boomRelicSfx = loadSound('assets/audio/Boom_Relic.wav');
   duplicateRelicSfx = loadSound('assets/audio/Duplicate_Relic.wav');
   gameOverSfx = loadSound('assets/audio/Game_Over.wav');
   lineClearSfx = loadSound('assets/audio/Line_Clear.wav');
@@ -1615,6 +1615,7 @@ window.mouseMoved = function() {
 
 window.mousePressed = function() {
     if (settingsModalOpen) {
+        if (relicMenu && relicMenu.mousePressed()) return;
         for (const r of settingsRegions) {
             if (mouseX >= r.x && mouseX <= r.x + r.w && mouseY >= r.y && mouseY <= r.y + r.h) {
                 handleSettingsRegionClick(r);
@@ -1635,6 +1636,7 @@ window.mousePressed = function() {
 
     if (paused) {
         handlePauseMenuClick();
+        if (relicMenu && relicMenu.mousePressed()) return;
         return;
     }
     if (gameState === "shop") shopMouseClicked(getShopGameState());

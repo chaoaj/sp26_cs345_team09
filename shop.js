@@ -127,7 +127,7 @@ function relicToShopItem(relic) {
   return {
     id: relic.id,
     name: relic.name,
-    description: relic.description,
+    description: relic.description, 
     cost: [relic.rarityKey] ?? 1,
     rarityColor: relic.rarity.color,
     rarityLabel: relic.rarity.label,
